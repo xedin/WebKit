@@ -186,8 +186,7 @@ ResolvedStyle TreeResolver::styleForStyleable(const Styleable& styleable, Resolu
 
     if (resolutionType == ResolutionType::FastPathInherit) {
         // If the only reason we are computing the style is that some parent inherited properties changed, we can just copy them.
-        auto style = Style::ComputedStyle::clonePtr(*existingStyle);
-        style->fastPathInheritFrom(parent().style);
+        auto style = Style::ComputedStyle::clonePtrWithFastPathInheritanceFrom(*existingStyle, parent().style);
         m_document->styleScope().matchResultCache().updateForFastPathInherit(element, parent().style);
         return { WTF::move(style) };
     }
@@ -1046,8 +1045,7 @@ std::unique_ptr<Style::ComputedStyle> TreeResolver::resolveAgainInDifferentConte
 {
     ASSERT(resolvedStyle.matchResult);
 
-    auto newStyle = Style::ComputedStyle::createPtr();
-    newStyle->inheritFrom(parentStyle);
+    auto newStyle = Style::ComputedStyle::createPtrInheritingFrom(parentStyle);
 
     newStyle->setPseudoElementIdentifier(resolvedStyle.style->pseudoElementIdentifier());
     newStyle->copyPseudoElementBitsFrom(*resolvedStyle.style);
@@ -1293,9 +1291,7 @@ static std::unique_ptr<Style::ComputedStyle> createInheritedDisplayContentsStyle
     if (parentBoxStyle && parentBoxStyle->inheritedEqual(parentElementStyle))
         return nullptr;
     // Compute style for imaginary unstyled <span> around the text node.
-    auto style = Style::ComputedStyle::createPtr();
-    style->inheritFrom(parentElementStyle);
-    return style;
+    return Style::ComputedStyle::createPtrInheritingFrom(parentElementStyle);
 }
 
 void TreeResolver::resetDescendantStyleRelations(Element& element, DescendantsToResolve descendantsToResolve)

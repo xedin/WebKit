@@ -2356,8 +2356,7 @@ static Ref<Style::GradientImage> autoFillStrongPasswordMaskImage()
 
 Style::ComputedStyle HTMLInputElement::createInnerTextStyle(const Style::ComputedStyle& style)
 {
-    auto textBlockStyle = Style::ComputedStyle::create();
-    textBlockStyle.inheritFrom(style);
+    auto textBlockStyle = Style::ComputedStyle::createInheritingFrom(style);
     adjustInnerTextStyle(style, textBlockStyle);
 
     textBlockStyle.setWhiteSpaceCollapse(WhiteSpaceCollapse::Preserve);

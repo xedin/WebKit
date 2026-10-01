@@ -549,8 +549,7 @@ void HTMLTextAreaElement::updatePlaceholderText()
 
 Style::ComputedStyle HTMLTextAreaElement::createInnerTextStyle(const Style::ComputedStyle& style)
 {
-    auto textBlockStyle = Style::ComputedStyle::create();
-    textBlockStyle.inheritFrom(style);
+    auto textBlockStyle = Style::ComputedStyle::createInheritingFrom(style);
     adjustInnerTextStyle(style, textBlockStyle);
     textBlockStyle.setDisplay(Style::DisplayType::BlockFlow);
     return textBlockStyle;

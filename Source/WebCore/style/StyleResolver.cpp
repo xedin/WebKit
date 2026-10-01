@@ -258,12 +258,12 @@ auto Resolver::initializeStateAndStyle(const Element& element, const ResolutionC
     if (initialStyle)
         state.setStyle(WTF::move(initialStyle));
     else if (state.parentStyle()) {
-        state.setStyle(Style::ComputedStyle::createPtrWithRegisteredInitialValues(document().customPropertyRegistry()));
         if (&element == document().documentElement() && !context.isSVGUseTreeRoot) {
+            state.setStyle(Style::ComputedStyle::createPtrWithRegisteredInitialValues(document().customPropertyRegistry()));
             // Initial values for custom properties are inserted to the document element style. Don't overwrite them.
             state.style()->inheritIgnoringCustomPropertiesFrom(*state.parentStyle());
         } else
-            state.style()->inheritFrom(*state.parentStyle());
+            state.setStyle(Style::ComputedStyle::createPtrWithRegisteredInitialValuesInheritingFrom(document().customPropertyRegistry(), *state.parentStyle()));
     } else {
         state.setStyle(defaultStyleForElement(&element));
         state.setParentStyle(Style::ComputedStyle::clonePtr(*state.style()));
@@ -636,10 +636,9 @@ std::optional<ResolvedStyle> Resolver::styleForPseudoElement(Element& element, c
 
     auto state = State(element, context.parentStyle, context.documentElementStyle, context.treeResolutionState.get(), parentHighlightStyle);
 
-    if (state.parentStyle()) {
-        state.setStyle(Style::ComputedStyle::createPtrWithRegisteredInitialValues(document().customPropertyRegistry()));
-        state.style()->inheritFrom(*state.parentStyle());
-    } else {
+    if (state.parentStyle())
+        state.setStyle(Style::ComputedStyle::createPtrWithRegisteredInitialValuesInheritingFrom(document().customPropertyRegistry(), *state.parentStyle()));
+    else {
         state.setStyle(defaultStyleForElement(&element));
         state.setParentStyle(Style::ComputedStyle::clonePtr(*state.style()));
     }
@@ -681,8 +680,7 @@ std::unique_ptr<Style::ComputedStyle> Resolver::styleForPage(int pageIndex)
 
     auto state = State(*documentElement, document().initialContainingBlockStyle(), nullptr, nullptr);
 
-    state.setStyle(Style::ComputedStyle::createPtr());
-    state.style()->inheritFrom(*state.rootElementStyle());
+    state.setStyle(Style::ComputedStyle::createPtrInheritingFrom(*state.rootElementStyle()));
 
     PageRuleCollector collector(m_ruleSets, documentElement->renderStyle()->writingMode());
     collector.matchAllPageRules(pageIndex);

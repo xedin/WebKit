@@ -87,6 +87,25 @@ inline SVGData::SVGData(const SVGData& other)
     ASSERT(other == *this, "SVGData should be properly copied.");
 }
 
+inline SVGData::SVGData(const SVGData& nonInheritedSource, const SVGData& inheritedSource)
+    : RefCounted<SVGData>()
+    , inheritedFlags(inheritedSource.inheritedFlags)
+    , nonInheritedFlags(nonInheritedSource.nonInheritedFlags)
+    , fillData(inheritedSource.fillData)
+    , strokeData(inheritedSource.strokeData)
+    , markerResourceData(inheritedSource.markerResourceData)
+    , stopData(nonInheritedSource.stopData)
+    , miscData(nonInheritedSource.miscData)
+    , layoutData(nonInheritedSource.layoutData)
+{
+    ASSERT(inheritedEqual(inheritedSource) && nonInheritedEqual(nonInheritedSource));
+}
+
+Ref<SVGData> SVGData::create(const SVGData& nonInheritedSource, const SVGData& inheritedSource)
+{
+    return adoptRef(*new SVGData(nonInheritedSource, inheritedSource));
+}
+
 Ref<SVGData> SVGData::copy() const
 {
     return adoptRef(*new SVGData(*this));

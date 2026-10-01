@@ -47,6 +47,8 @@ class SVGData : public RefCounted<SVGData> {
 public:
     static Ref<SVGData> createDefaultStyle();
     static Ref<SVGData> create() { return adoptRef(*new SVGData); }
+    // Equivalent to nonInheritedSource.copy() followed by inheritFrom(inheritedSource), without the throwaway refs.
+    static Ref<SVGData> create(const SVGData& nonInheritedSource, const SVGData& inheritedSource);
     Ref<SVGData> copy() const;
     ~SVGData();
 
@@ -108,6 +110,7 @@ public:
 private:
     SVGData();
     SVGData(const SVGData&);
+    SVGData(const SVGData& nonInheritedSource, const SVGData& inheritedSource);
 
     enum CreateDefaultType { CreateDefault };
     SVGData(CreateDefaultType); // Used to create the default style.

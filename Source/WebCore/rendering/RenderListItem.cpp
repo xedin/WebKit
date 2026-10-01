@@ -169,8 +169,7 @@ Style::ComputedStyle RenderListItem::computeMarkerStyle() const
 
         // The marker always inherits from the list item, regardless of where it might end
         // up (e.g., in some deeply nested line box). See CSS3 spec.
-        auto markerStyle = Style::ComputedStyle::create();
-        markerStyle.inheritFrom(style());
+        auto markerStyle = Style::ComputedStyle::createInheritingFrom(style());
 
         // In the case of a ::before or ::after pseudo-element, we manually apply the properties
         // otherwise set in the user-agent stylesheet since we don't support ::before::marker or

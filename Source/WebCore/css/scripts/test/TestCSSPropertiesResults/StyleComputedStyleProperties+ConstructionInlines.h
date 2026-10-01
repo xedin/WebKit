@@ -18,6 +18,16 @@ inline ComputedStyleProperties::ComputedStyleProperties(const ComputedStylePrope
 {
 }
 
+inline ComputedStyleProperties::ComputedStyleProperties(const ComputedStyleProperties& source, const ComputedStyleProperties& inheritParent, InheritTag tag)
+    : ComputedStyleBase { source, inheritParent, tag }
+{
+}
+
+inline ComputedStyleProperties::ComputedStyleProperties(const ComputedStyleProperties& source, const ComputedStyleProperties& inheritParent, FastPathInheritTag tag)
+    : ComputedStyleBase { source, inheritParent, tag }
+{
+}
+
 inline ComputedStyleProperties::ComputedStyleProperties(ComputedStyleProperties& a, ComputedStyleProperties&& b)
     : ComputedStyleBase { a, WTF::move(b) }
 {

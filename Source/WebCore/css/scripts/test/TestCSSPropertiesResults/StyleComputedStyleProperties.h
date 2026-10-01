@@ -150,6 +150,8 @@ protected:
 
     inline ComputedStyleProperties(CreateDefaultStyleTag);
     inline ComputedStyleProperties(const ComputedStyleProperties&, CloneTag);
+    inline ComputedStyleProperties(const ComputedStyleProperties& source, const ComputedStyleProperties& inheritParent, InheritTag);
+    inline ComputedStyleProperties(const ComputedStyleProperties& source, const ComputedStyleProperties& inheritParent, FastPathInheritTag);
 
     inline ComputedStyleProperties(ComputedStyleProperties&, ComputedStyleProperties&&);
 };

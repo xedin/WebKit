@@ -465,6 +465,8 @@ class ComputedStyleBase : public CanMakeCheckedPtr<ComputedStyleBase, WTF::Defau
 public:
     enum CloneTag { Clone };
     enum CreateDefaultStyleTag { CreateDefaultStyle };
+    enum InheritTag { Inherit };
+    enum FastPathInheritTag { FastPathInherit };
 
     WEBCORE_EXPORT ~ComputedStyleBase();
 
@@ -862,6 +864,12 @@ protected:
 
     ComputedStyleBase(CreateDefaultStyleTag);
     ComputedStyleBase(const ComputedStyleBase&, CloneTag);
+
+    // Builds the style in its final form, with each DataRef initialized exactly once:
+    // InheritTag is equivalent to cloning `source` and then calling inheritFrom(inheritParent);
+    // FastPathInheritTag is equivalent to cloning `source` and then calling fastPathInheritFrom(inheritParent).
+    ComputedStyleBase(const ComputedStyleBase& source, const ComputedStyleBase& inheritParent, InheritTag);
+    ComputedStyleBase(const ComputedStyleBase& source, const ComputedStyleBase& inheritParent, FastPathInheritTag);
 
     ComputedStyleBase(ComputedStyleBase&, ComputedStyleBase&&);
 

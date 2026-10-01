@@ -6431,8 +6431,7 @@ void RenderLayer::removeReflection()
 
 Style::ComputedStyle RenderLayer::createReflectionStyle()
 {
-    auto newStyle = Style::ComputedStyle::create();
-    newStyle.inheritFrom(renderer().style());
+    auto newStyle = Style::ComputedStyle::createInheritingFrom(renderer().style());
     
     auto reflection = renderer().style().boxReflect().tryReflection();
 

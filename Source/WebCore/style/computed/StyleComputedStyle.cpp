@@ -104,6 +104,21 @@ std::unique_ptr<ComputedStyle> ComputedStyle::createPtrWithRegisteredInitialValu
     return clonePtr(registry.initialValuePrototypeStyle());
 }
 
+ComputedStyle ComputedStyle::createInheritingFrom(const ComputedStyle& inheritParent)
+{
+    return ComputedStyle(defaultStyleSingleton(), inheritParent, Inherit);
+}
+
+std::unique_ptr<ComputedStyle> ComputedStyle::createPtrInheritingFrom(const ComputedStyle& inheritParent)
+{
+    return makeUnique<ComputedStyle>(defaultStyleSingleton(), inheritParent, Inherit);
+}
+
+std::unique_ptr<ComputedStyle> ComputedStyle::createPtrWithRegisteredInitialValuesInheritingFrom(const Style::CustomPropertyRegistry& registry, const ComputedStyle& inheritParent)
+{
+    return makeUnique<ComputedStyle>(registry.initialValuePrototypeStyle(), inheritParent, Inherit);
+}
+
 SUPPRESS_NODELETE ComputedStyle ComputedStyle::clone(const ComputedStyle& style)
 {
     return ComputedStyle(style, Clone);
@@ -121,10 +136,14 @@ std::unique_ptr<ComputedStyle> ComputedStyle::clonePtr(const ComputedStyle& styl
     return makeUnique<ComputedStyle>(style, Clone);
 }
 
+std::unique_ptr<ComputedStyle> ComputedStyle::clonePtrWithFastPathInheritanceFrom(const ComputedStyle& style, const ComputedStyle& inheritParent)
+{
+    return makeUnique<ComputedStyle>(style, inheritParent, FastPathInherit);
+}
+
 ComputedStyle ComputedStyle::createAnonymousStyleWithDisplay(const ComputedStyle& parentStyle, Style::Display display)
 {
-    auto newStyle = create();
-    newStyle.inheritFrom(parentStyle);
+    auto newStyle = createInheritingFrom(parentStyle);
     newStyle.inheritUnicodeBidiFrom(parentStyle);
     newStyle.setDisplay(display);
     return newStyle;
@@ -138,9 +157,7 @@ ComputedStyle ComputedStyle::createStyleInheritingFromPseudoStyle(const Computed
         || pseudoStyle.pseudoElementType() == PseudoElementType::Checkmark
         || pseudoStyle.pseudoElementType() == PseudoElementType::PickerIcon);
 
-    auto style = create();
-    style.inheritFrom(pseudoStyle);
-    return style;
+    return createInheritingFrom(pseudoStyle);
 }
 
 SUPPRESS_NODELETE ComputedStyle ComputedStyle::replace(ComputedStyle&& newStyle)

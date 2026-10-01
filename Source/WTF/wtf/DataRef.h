@@ -40,7 +40,9 @@ public:
 
     DataRef& operator=(const DataRef& other)
     {
-        m_data = other.m_data.copyRef();
+        // Sharing data that is already shared would only ref and immediately deref it.
+        if (m_data.ptr() != other.m_data.ptr())
+            m_data = other.m_data.copyRef();
         return *this;
     }
 

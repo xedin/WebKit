@@ -4911,8 +4911,7 @@ const Style::ComputedStyle& Element::resolvePseudoElementStyle(const Style::Pseu
 
     auto style = document->styleForElementIgnoringPendingStylesheets(*this, parentStyle.get(), pseudoElementIdentifier);
     if (!style) {
-        style = Style::ComputedStyle::createPtr();
-        style->inheritFrom(*parentStyle);
+        style = Style::ComputedStyle::createPtrInheritingFrom(*parentStyle);
         style->setPseudoElementIdentifier(pseudoElementIdentifier);
     }
 

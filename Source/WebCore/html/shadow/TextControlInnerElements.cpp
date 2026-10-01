@@ -122,8 +122,7 @@ Ref<TextControlInnerElement> TextControlInnerElement::create(Document& document)
 
 std::optional<Style::UnadjustedStyle> TextControlInnerElement::resolveCustomStyle(const Style::ResolutionContext&, const Style::ComputedStyle* shadowHostStyle)
 {
-    auto newStyle = Style::ComputedStyle::createPtr();
-    newStyle->inheritFrom(*shadowHostStyle);
+    auto newStyle = Style::ComputedStyle::createPtrInheritingFrom(*shadowHostStyle);
     newStyle->setFlexGrow(1);
 
     // Needed for correct shrinking.

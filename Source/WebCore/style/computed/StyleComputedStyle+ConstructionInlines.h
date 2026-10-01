@@ -42,6 +42,16 @@ inline ComputedStyle::ComputedStyle(const ComputedStyle& other, CloneTag tag)
 {
 }
 
+inline ComputedStyle::ComputedStyle(const ComputedStyle& source, const ComputedStyle& inheritParent, InheritTag tag)
+    : ComputedStyleProperties { source, inheritParent, tag }
+{
+}
+
+inline ComputedStyle::ComputedStyle(const ComputedStyle& source, const ComputedStyle& inheritParent, FastPathInheritTag tag)
+    : ComputedStyleProperties { source, inheritParent, tag }
+{
+}
+
 inline ComputedStyle::ComputedStyle(ComputedStyle& a, ComputedStyle&& b)
     : ComputedStyleProperties { a, WTF::move(b) }
 {

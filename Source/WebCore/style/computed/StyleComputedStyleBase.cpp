@@ -33,8 +33,10 @@
 #include "StyleComputedStyle+GettersInlines.h"
 #include "StyleComputedStyle+DifferenceLogging.h"
 #include "StyleCustomProperty.h"
+#include "StyleInheritedData.h"
 #include "StyleKeyword+Logging.h"
 #include "StylePrimitiveNumericTypes+Evaluation.h"
+#include "StyleSVGData.h"
 #include "StyleTextDecorationLine.h"
 #include "StyleTextTransform.h"
 #include "StyleZoom.h"
@@ -70,6 +72,50 @@ ComputedStyleBase::~ComputedStyleBase()
     ASSERT_WITH_SECURITY_IMPLICATION(!m_deletionHasBegun);
     m_deletionHasBegun = true;
 #endif
+}
+
+static DataRef<SVGData> inheritedSVGData(const DataRef<SVGData>& source, const DataRef<SVGData>& inheritParent)
+{
+    // Matches ComputedStyle::inheritFrom(), which leaves the SVG data alone when it already compares equal.
+    if (source == inheritParent)
+        return source;
+    return SVGData::create(source, inheritParent);
+}
+
+ComputedStyleBase::ComputedStyleBase(const ComputedStyleBase& source, const ComputedStyleBase& inheritParent, InheritTag)
+    : m_nonInheritedFlags(source.m_nonInheritedFlags)
+    , m_inheritedFlags(inheritParent.m_inheritedFlags)
+    , m_nonInheritedData(source.m_nonInheritedData)
+    , m_inheritedRareData(inheritParent.m_inheritedRareData)
+    , m_inheritedData(inheritParent.m_inheritedData)
+    , m_svgData(inheritedSVGData(source.m_svgData, inheritParent.m_svgData))
+{
+}
+
+static DataRef<InheritedData> fastPathInheritedData(const DataRef<InheritedData>& source, const DataRef<InheritedData>& inheritParent)
+{
+    // Matches ComputedStyle::fastPathInheritFrom(), but copies the data at most once instead of sharing it and then copying it on write.
+    if (source.ptr() == inheritParent.ptr())
+        return source;
+    if (source->nonFastPathInheritedEqual(*inheritParent))
+        return inheritParent;
+    auto data = source->copy();
+    data->fastPathInheritFrom(*inheritParent);
+    return data;
+}
+
+ComputedStyleBase::ComputedStyleBase(const ComputedStyleBase& source, const ComputedStyleBase& inheritParent, FastPathInheritTag)
+    : m_nonInheritedFlags(source.m_nonInheritedFlags)
+    , m_inheritedFlags(source.m_inheritedFlags)
+    , m_nonInheritedData(source.m_nonInheritedData)
+    , m_inheritedRareData(source.m_inheritedRareData)
+    , m_inheritedData(fastPathInheritedData(source.m_inheritedData, inheritParent.m_inheritedData))
+    , m_svgData(source.m_svgData)
+{
+    ASSERT(!source.m_nonInheritedFlags.disallowsFastPathInheritance);
+
+    m_inheritedFlags.visibility = inheritParent.m_inheritedFlags.visibility;
+    m_inheritedFlags.hasExplicitlySetColor = inheritParent.m_inheritedFlags.hasExplicitlySetColor;
 }
 
 bool ComputedStyleBase::effectiveInertOutOfLine() const

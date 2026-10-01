@@ -285,9 +285,8 @@ void RenderTreeUpdater::GeneratedContent::updateBeforeOrAfterPseudoElement(Eleme
     if (updateStyle->display() == Style::DisplayType::Contents) {
         // For display:contents we create an inline wrapper that inherits its
         // style from the display:contents style.
-        auto contentsStyle = Style::ComputedStyle::createPtr();
+        auto contentsStyle = Style::ComputedStyle::createPtrInheritingFrom(*updateStyle);
         contentsStyle->setPseudoElementIdentifier({ { pseudoElementType } });
-        contentsStyle->inheritFrom(*updateStyle);
         contentsStyle->copyContentFrom(*updateStyle);
         contentsStyle->copyPseudoElementsFrom(*updateStyle);
 

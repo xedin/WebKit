@@ -38,6 +38,8 @@ public:
 
     explicit ComputedStyle(CreateDefaultStyleTag);
     ComputedStyle(const ComputedStyle&, CloneTag);
+    ComputedStyle(const ComputedStyle& source, const ComputedStyle& inheritParent, InheritTag);
+    ComputedStyle(const ComputedStyle& source, const ComputedStyle& inheritParent, FastPathInheritTag);
 
     [[nodiscard]] ComputedStyle NODELETE replace(ComputedStyle&&);
 
@@ -49,9 +51,17 @@ public:
     static std::unique_ptr<ComputedStyle> createPtr();
     static std::unique_ptr<ComputedStyle> createPtrWithRegisteredInitialValues(const Style::CustomPropertyRegistry&);
 
+    // Equivalent to create()/createPtr()/createPtrWithRegisteredInitialValues() followed by inheritFrom(inheritParent),
+    // but each style data block is shared exactly once instead of being shared and then replaced.
+    static ComputedStyle createInheritingFrom(const ComputedStyle& inheritParent);
+    static std::unique_ptr<ComputedStyle> createPtrInheritingFrom(const ComputedStyle& inheritParent);
+    static std::unique_ptr<ComputedStyle> createPtrWithRegisteredInitialValuesInheritingFrom(const Style::CustomPropertyRegistry&, const ComputedStyle& inheritParent);
+
     static ComputedStyle NODELETE clone(const ComputedStyle&);
     static ComputedStyle cloneIncludingPseudoElements(const ComputedStyle&);
     static std::unique_ptr<ComputedStyle> clonePtr(const ComputedStyle&);
+    // Equivalent to clonePtr(style) followed by fastPathInheritFrom(inheritParent).
+    static std::unique_ptr<ComputedStyle> clonePtrWithFastPathInheritanceFrom(const ComputedStyle&, const ComputedStyle& inheritParent);
 
     static ComputedStyle createAnonymousStyleWithDisplay(const ComputedStyle& parentStyle, Style::Display);
     static ComputedStyle createStyleInheritingFromPseudoStyle(const ComputedStyle& pseudoStyle);

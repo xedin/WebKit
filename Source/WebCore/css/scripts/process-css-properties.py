@@ -8033,6 +8033,8 @@ class GenerateStyleComputedStyleProperties(object):
                     # emit them (which would reference unexported ComputedStyleBase constructors).
                     writer.write(f"inline ComputedStyleProperties(CreateDefaultStyleTag);")
                     writer.write(f"inline ComputedStyleProperties(const ComputedStyleProperties&, CloneTag);")
+                    writer.write(f"inline ComputedStyleProperties(const ComputedStyleProperties& source, const ComputedStyleProperties& inheritParent, InheritTag);")
+                    writer.write(f"inline ComputedStyleProperties(const ComputedStyleProperties& source, const ComputedStyleProperties& inheritParent, FastPathInheritTag);")
                     writer.newline()
 
                     writer.write(f"inline ComputedStyleProperties(ComputedStyleProperties&, ComputedStyleProperties&&);")
@@ -8102,6 +8104,18 @@ class GenerateStyleComputedStyleProperties(object):
 
                 writer.write(f"inline ComputedStyleProperties::ComputedStyleProperties(const ComputedStyleProperties& other, CloneTag tag)")
                 writer.write(f"    : ComputedStyleBase {{ other, tag }}")
+                writer.write(f"{{")
+                writer.write(f"}}")
+                writer.newline()
+
+                writer.write(f"inline ComputedStyleProperties::ComputedStyleProperties(const ComputedStyleProperties& source, const ComputedStyleProperties& inheritParent, InheritTag tag)")
+                writer.write(f"    : ComputedStyleBase {{ source, inheritParent, tag }}")
+                writer.write(f"{{")
+                writer.write(f"}}")
+                writer.newline()
+
+                writer.write(f"inline ComputedStyleProperties::ComputedStyleProperties(const ComputedStyleProperties& source, const ComputedStyleProperties& inheritParent, FastPathInheritTag tag)")
+                writer.write(f"    : ComputedStyleBase {{ source, inheritParent, tag }}")
                 writer.write(f"{{")
                 writer.write(f"}}")
                 writer.newline()
