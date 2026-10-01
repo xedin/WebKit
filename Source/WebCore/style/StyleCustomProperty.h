@@ -49,6 +49,7 @@ namespace Style {
 enum class IsAttrTainted : bool { No, Yes };
 
 class CustomProperty final : public RefCounted<CustomProperty> {
+    WTF_MAKE_THREAD_UNSAFE_REFCOUNTED(CustomProperty); // top-15 SP3 RefCountedBase class
     WTF_MAKE_TZONE_ALLOCATED(CustomProperty);
 public:
     // https://drafts.csswg.org/css-variables-2/#guaranteed-invalid

@@ -41,6 +41,7 @@ enum class IsAttrTainted : bool;
 
 DECLARE_ALLOCATOR_WITH_HEAP_IDENTIFIER(CSSVariableData);
 class CSSVariableData : public RefCounted<CSSVariableData> {
+    WTF_MAKE_THREAD_UNSAFE_REFCOUNTED(CSSVariableData); // top-15 SP3 RefCountedBase class
     WTF_DEPRECATED_MAKE_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(CSSVariableData, CSSVariableData);
 public:
     static Ref<CSSVariableData> create(const CSSParserTokenRange& range, const CSSParserContext& context = strictCSSParserContext())

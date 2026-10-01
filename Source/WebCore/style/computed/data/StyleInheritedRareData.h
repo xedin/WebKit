@@ -89,6 +89,7 @@ class CustomPropertyData;
 // uses one of these properties.
 DECLARE_ALLOCATOR_WITH_HEAP_IDENTIFIER(InheritedRareData);
 class InheritedRareData : public RefCounted<InheritedRareData> {
+    WTF_MAKE_THREAD_UNSAFE_REFCOUNTED(InheritedRareData); // top-15 SP3 RefCountedBase class
     WTF_DEPRECATED_MAKE_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(InheritedRareData, InheritedRareData);
 public:
     static Ref<InheritedRareData> create() { return adoptRef(*new InheritedRareData); }

@@ -42,6 +42,7 @@ class SurroundData;
 
 DECLARE_ALLOCATOR_WITH_HEAP_IDENTIFIER(NonInheritedData);
 class NonInheritedData : public RefCounted<NonInheritedData> {
+    WTF_MAKE_THREAD_UNSAFE_REFCOUNTED(NonInheritedData); // top-15 SP3 RefCountedBase class
     WTF_DEPRECATED_MAKE_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(NonInheritedData, NonInheritedData);
 public:
     static Ref<NonInheritedData> create();

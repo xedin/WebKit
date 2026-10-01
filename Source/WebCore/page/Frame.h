@@ -70,6 +70,7 @@ enum class ScrollbarMode : uint8_t;
 using SandboxFlags = OptionSet<SandboxFlag>;
 
 class Frame : public RefCountedAndCanMakeWeakPtr<Frame> {
+    WTF_MAKE_THREAD_UNSAFE_REFCOUNTED(Frame); // top-15 SP3 RefCountedBase class
 public:
     virtual ~Frame();
 
