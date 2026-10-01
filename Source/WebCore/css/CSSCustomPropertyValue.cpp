@@ -28,6 +28,7 @@
 #include "CSSCustomPropertyValue.h"
 
 #include "CSSSerializationContext.h"
+#include "StyleCustomProperty.h"
 #include <wtf/NeverDestroyed.h>
 
 namespace WebCore {
@@ -51,6 +52,22 @@ Ref<CSSCustomPropertyValue> CSSCustomPropertyValue::createSyntaxAll(const AtomSt
 Ref<CSSCustomPropertyValue> CSSCustomPropertyValue::createWithCSSWideKeyword(const AtomString& name, CSSWideKeyword keyword)
 {
     return adoptRef(*new CSSCustomPropertyValue(name, VariantValue { keyword }));
+}
+
+CSSCustomPropertyValue::CSSCustomPropertyValue(const AtomString& name, VariantValue&& value)
+    : CSSValue(ClassType::CustomProperty)
+    , m_name(name)
+    , m_value(WTF::move(value))
+{
+}
+
+CSSCustomPropertyValue::~CSSCustomPropertyValue() = default;
+
+Ref<const Style::CustomProperty> CSSCustomPropertyValue::unregisteredCustomProperty() const
+{
+    if (!m_cachedUnregisteredCustomProperty)
+        m_cachedUnregisteredCustomProperty = Style::CustomProperty::createForVariableData(m_name, std::get<Ref<CSSVariableData>>(m_value).copyRef());
+    return *m_cachedUnregisteredCustomProperty;
 }
 
 bool CSSCustomPropertyValue::isVariableReference() const

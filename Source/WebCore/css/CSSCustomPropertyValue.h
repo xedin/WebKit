@@ -35,6 +35,10 @@ namespace WebCore {
 
 class CSSParserToken;
 
+namespace Style {
+class CustomProperty;
+}
+
 class CSSCustomPropertyValue final : public CSSValue {
 public:
     using VariantValue = Variant<
@@ -47,6 +51,8 @@ public:
     static Ref<CSSCustomPropertyValue> createUnresolved(const AtomString& name, Ref<CSSSubstitutionValue>&&);
     static Ref<CSSCustomPropertyValue> createSyntaxAll(const AtomString& name, Ref<CSSVariableData>&&);
     static Ref<CSSCustomPropertyValue> createWithCSSWideKeyword(const AtomString& name, CSSWideKeyword);
+
+    ~CSSCustomPropertyValue();
 
     const AtomString& name() const LIFETIME_BOUND { return m_name; }
     const VariantValue& value() const LIFETIME_BOUND { return m_value; }
@@ -61,6 +67,10 @@ public:
 
     std::optional<CSSWideKeyword> tryCSSWideKeyword() const;
 
+    // The computed value of this declaration for an unregistered custom property, when it holds variable data.
+    // It depends only on the name and the data, so it is created once and shared by every element it applies to.
+    Ref<const Style::CustomProperty> unregisteredCustomProperty() const;
+
     // The value's tokens (empty for a CSS-wide keyword).
     const Vector<CSSParserToken>& tokens() const;
 
@@ -69,16 +79,12 @@ public:
     IterationStatus customVisitChildren(NOESCAPE const Function<IterationStatus(CSSValue&)>&) const;
 
 private:
-    CSSCustomPropertyValue(const AtomString& name, VariantValue&& value)
-        : CSSValue(ClassType::CustomProperty)
-        , m_name(name)
-        , m_value(WTF::move(value))
-    {
-    }
+    CSSCustomPropertyValue(const AtomString& name, VariantValue&&);
 
     const AtomString m_name;
     const VariantValue m_value;
     mutable String m_cachedCSSText;
+    mutable RefPtr<const Style::CustomProperty> m_cachedUnregisteredCustomProperty;
 };
 
 } // namespace WebCore

@@ -176,10 +176,10 @@ void ComputedStyleBase::setCustomPropertyValue(Ref<const CustomProperty>&& value
 {
     auto& name = value->name();
     if (isInherited) {
-        if (RefPtr existingValue = m_inheritedRareData->customProperties->get(name); !existingValue || *existingValue != value.get())
+        if (RefPtr existingValue = m_inheritedRareData->customProperties->get(name); !existingValue || (existingValue.get() != value.ptr() && *existingValue != value.get()))
             m_inheritedRareData.access().customProperties.access().set(name, WTF::move(value));
     } else {
-        if (RefPtr existingValue = m_nonInheritedData->rareData->customProperties->get(name); !existingValue || *existingValue != value.get())
+        if (RefPtr existingValue = m_nonInheritedData->rareData->customProperties->get(name); !existingValue || (existingValue.get() != value.ptr() && *existingValue != value.get()))
             m_nonInheritedData.access().rareData.access().customProperties.access().set(name, WTF::move(value));
     }
 }

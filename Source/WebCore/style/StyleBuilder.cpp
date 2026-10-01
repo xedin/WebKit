@@ -738,9 +738,9 @@ std::optional<Builder::CustomPropertyOrKeyword> Builder::resolveCustomPropertyVa
         [&](const Ref<CSSSubstitutionValue>&) -> std::optional<CustomPropertyOrKeyword> {
             return { };
         },
-        [&](const Ref<CSSVariableData>& data) -> std::optional<CustomPropertyOrKeyword> {
+        [&](const Ref<CSSVariableData>&) -> std::optional<CustomPropertyOrKeyword> {
             if (!registered)
-                return { { CustomProperty::createForVariableData(name, data.copyRef()) } };
+                return { { value.unregisteredCustomProperty() } };
             return { };
         },
         [&](const CSSWideKeyword& keyword) -> std::optional<CustomPropertyOrKeyword> {
