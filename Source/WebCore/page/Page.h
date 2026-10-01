@@ -391,7 +391,6 @@ constexpr auto allRenderingUpdateSteps = updateRenderingSteps | perRootFrameRend
 using WeakElementEdges = RectEdges<WeakPtr<Element, WeakPtrImplWithEventTargetData>>;
 
 class Page : public RefCountedAndCanMakeWeakPtr<Page>, public Supplementable<Page> {
-    WTF_MAKE_THREAD_UNSAFE_REFCOUNTED(Page); // top-15 SP3 RefCountedBase class
     WTF_MAKE_TZONE_ALLOCATED_EXPORT(Page, WEBCORE_EXPORT);
     WTF_MAKE_NONCOPYABLE(Page);
     friend class SettingsBase;

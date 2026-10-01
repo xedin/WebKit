@@ -39,7 +39,6 @@ class FontData;
 
 DECLARE_ALLOCATOR_WITH_HEAP_IDENTIFIER(InheritedData);
 class InheritedData : public RefCounted<InheritedData> {
-    WTF_MAKE_THREAD_UNSAFE_REFCOUNTED(InheritedData); // top-15 SP3 RefCountedBase class
     WTF_DEPRECATED_MAKE_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(InheritedData, InheritedData);
 public:
     static Ref<InheritedData> create() { return adoptRef(*new InheritedData); }

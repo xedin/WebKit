@@ -52,7 +52,6 @@ DECLARE_ALLOCATOR_WITH_HEAP_IDENTIFIER(CStringBuffer);
 // CStringBuffer is the ref-counted storage class for the characters in a CStringBase.
 // The data is implicitly allocated 1 character longer than length(), as it is zero-terminated.
 class CStringBuffer final : public RefCounted<CStringBuffer> {
-    WTF_MAKE_THREAD_UNSAFE_REFCOUNTED(CStringBuffer); // top-15 SP3 RefCountedBase class
     WTF_DEPRECATED_MAKE_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(CStringBuffer, CStringBuffer);
 public:
     size_t length() const { return m_length; }

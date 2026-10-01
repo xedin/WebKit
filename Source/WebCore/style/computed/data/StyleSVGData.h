@@ -43,7 +43,6 @@ class SVGStrokeData;
 
 DECLARE_ALLOCATOR_WITH_HEAP_IDENTIFIER(SVGData);
 class SVGData : public RefCounted<SVGData> {
-    WTF_MAKE_THREAD_UNSAFE_REFCOUNTED(SVGData); // top-15 SP3 RefCountedBase class
     WTF_DEPRECATED_MAKE_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(SVGData, SVGData);
 public:
     static Ref<SVGData> createDefaultStyle();

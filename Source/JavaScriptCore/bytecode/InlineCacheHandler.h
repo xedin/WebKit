@@ -53,7 +53,6 @@ enum class CacheType : int8_t {
 };
 
 class JSC_CACHE_LINE_ALIGNED InlineCacheHandler : public RefCounted<InlineCacheHandler> {
-    WTF_MAKE_THREAD_UNSAFE_REFCOUNTED(InlineCacheHandler); // top-15 SP3 RefCountedBase class
     WTF_MAKE_NONCOPYABLE(InlineCacheHandler);
     WTF_MAKE_TZONE_ALLOCATED(InlineCacheHandler);
     friend class InlineCacheCompiler;

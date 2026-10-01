@@ -102,7 +102,6 @@ enum class HasReachedMaxNestingLevel : bool { No, Yes };
 
 // https://html.spec.whatwg.org/multipage/webappapis.html#event-loop
 class EventLoop : public RefCountedAndCanMakeWeakPtr<EventLoop> {
-    WTF_MAKE_THREAD_UNSAFE_REFCOUNTED(EventLoop); // top-15 SP3 RefCountedBase class
 public:
     using TaskVector = Vector<std::unique_ptr<EventLoopTask>, 4>;
 

@@ -40,7 +40,6 @@ struct SerializationContext;
 
 DECLARE_ALLOCATOR_WITH_HEAP_IDENTIFIER(StyleProperties);
 class StyleProperties : public RefCounted<StyleProperties> {
-    WTF_MAKE_THREAD_UNSAFE_REFCOUNTED(StyleProperties); // top-15 SP3 RefCountedBase class
     WTF_DEPRECATED_MAKE_FAST_ALLOCATED_WITH_HEAP_IDENTIFIER(StyleProperties, StyleProperties);
 public:
     // Override RefCounted's deref() to ensure operator delete is called on
