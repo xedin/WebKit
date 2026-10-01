@@ -57,6 +57,7 @@ public:
     AnimatableCSSPropertyToTransitionMap& runningTransitionsByProperty() LIFETIME_BOUND { return m_runningTransitionsByProperty; }
     const Style::ComputedStyle* lastStyleChangeEventStyle() const LIFETIME_BOUND { return m_lastStyleChangeEventStyle.get(); }
     void setLastStyleChangeEventStyle(std::unique_ptr<const Style::ComputedStyle>&&);
+    std::unique_ptr<const Style::ComputedStyle> replaceLastStyleChangeEventStyle(std::unique_ptr<const Style::ComputedStyle>&&);
     void cssAnimationsDidUpdate() { m_hasPendingKeyframesUpdate = false; }
     void keyframesRuleDidChange() { m_hasPendingKeyframesUpdate = true; }
     bool hasPendingKeyframesUpdate() const { return m_hasPendingKeyframesUpdate; }

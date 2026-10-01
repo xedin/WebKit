@@ -332,6 +332,11 @@ void Styleable::willChangeRenderer() const
     }
 }
 
+std::unique_ptr<const Style::ComputedStyle> Styleable::replaceLastStyleChangeEventStyle(std::unique_ptr<const Style::ComputedStyle>&& style) const
+{
+    return element.replaceLastStyleChangeEventStyle(pseudoElementIdentifier, WTF::move(style));
+}
+
 OptionSet<AnimationImpact> Styleable::applyKeyframeEffects(Style::ComputedStyle& targetStyle, HashSet<AnimatableCSSProperty>& affectedProperties, const Style::ComputedStyle* previousLastStyleChangeEventStyle, const Style::ResolutionContext& resolutionContext) const
 {
     return protect(element)->ensureKeyframeEffectStack(pseudoElementIdentifier).applyKeyframeEffects(targetStyle, affectedProperties, previousLastStyleChangeEventStyle, resolutionContext);

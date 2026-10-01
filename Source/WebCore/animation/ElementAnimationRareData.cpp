@@ -64,13 +64,15 @@ void ElementAnimationRareData::setAnimationsCreatedByMarkup(CSSAnimationCollecti
 
 void ElementAnimationRareData::setLastStyleChangeEventStyle(std::unique_ptr<const Style::ComputedStyle>&& style)
 {
-    if (m_keyframeEffectStack && m_lastStyleChangeEventStyle != style) {
-        auto previousStyleChangeEventStyle = std::exchange(m_lastStyleChangeEventStyle, WTF::move(style));
-        m_keyframeEffectStack->lastStyleChangeEventStyleDidChange(previousStyleChangeEventStyle.get(), m_lastStyleChangeEventStyle.get());
-        return;
-    }
+    replaceLastStyleChangeEventStyle(WTF::move(style));
+}
 
-    m_lastStyleChangeEventStyle = WTF::move(style);
+std::unique_ptr<const Style::ComputedStyle> ElementAnimationRareData::replaceLastStyleChangeEventStyle(std::unique_ptr<const Style::ComputedStyle>&& style)
+{
+    auto previousStyleChangeEventStyle = std::exchange(m_lastStyleChangeEventStyle, WTF::move(style));
+    if (m_keyframeEffectStack && previousStyleChangeEventStyle != m_lastStyleChangeEventStyle)
+        m_keyframeEffectStack->lastStyleChangeEventStyleDidChange(previousStyleChangeEventStyle.get(), m_lastStyleChangeEventStyle.get());
+    return previousStyleChangeEventStyle;
 }
 
 } // namespace WebCore

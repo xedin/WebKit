@@ -69,7 +69,7 @@ public:
 
     void updateAfterDescendants(RenderElement&);
     void destroyAndCleanUpAnonymousWrappers(RenderObject& child, const RenderElement* destroyRoot);
-    void normalizeTreeAfterStyleChange(RenderElement&, Style::ComputedStyle& oldStyle);
+    void normalizeTreeAfterStyleChange(RenderElement&, bool wasFloating, bool wasOutOfFlowPositioned);
 
     // Fills in what the marker registration below collected. Called from RenderTreeUpdater::GeneratedContent.
     void updateListMarkerContents();

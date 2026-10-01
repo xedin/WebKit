@@ -905,9 +905,9 @@ ElementUpdate TreeResolver::createAnimatedElementUpdate(ResolvedStyle&& resolved
             return { WTF::move(resolvedStyle.style), OptionSet<AnimationImpact> { } };
         }
 
-        auto previousLastStyleChangeEventStyle = styleable.lastStyleChangeEventStyle() ? Style::ComputedStyle::clonePtr(*styleable.lastStyleChangeEventStyle()) : nullptr;
-        // Record the style prior to applying animations for this style change event.
-        styleable.setLastStyleChangeEventStyle(Style::ComputedStyle::clonePtr(*resolvedStyle.style));
+        // Record the style prior to applying animations for this style change event. The previous one is still needed
+        // below, so take ownership of it rather than cloning it before it gets replaced.
+        auto previousLastStyleChangeEventStyle = styleable.replaceLastStyleChangeEventStyle(Style::ComputedStyle::clonePtr(*resolvedStyle.style));
 
         // Apply all keyframe effects to the new style.
         HashSet<AnimatableCSSProperty> animatedProperties;
@@ -919,7 +919,6 @@ ElementUpdate TreeResolver::createAnimatedElementUpdate(ResolvedStyle&& resolved
             return { WTF::move(resolvedStyle.style), animationImpact };
 
         if (resolvedStyle.matchResult) {
-            auto animatedStyleBeforeCascadeApplication = Style::ComputedStyle::clonePtr(*animatedStyle);
             // The cascade may override animated properties and have dependencies to them.
             auto overriddenAnimatedProperties = applyCascadeAfterAnimation(*animatedStyle, animatedPropertySources(styleable, animatedProperties), *resolvedStyle.matchResult, element, resolutionContext);
             ASSERT(styleable.keyframeEffectStack());

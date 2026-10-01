@@ -397,9 +397,11 @@ void RenderTreeUpdater::updateAfterDescendants(Element& element, const Style::El
 
 void RenderTreeUpdater::updateRendererStyle(RenderElement& renderer, Style::ComputedStyle&& newStyle, Style::DifferenceResult minimalStyleDifference)
 {
-    auto oldStyle = Style::ComputedStyle::clone(renderer.style());
+    // Only these two properties of the old style are needed afterwards, so capture them instead of cloning the whole style.
+    bool wasFloating = renderer.style().floating() != Float::None;
+    bool wasOutOfFlowPositioned = renderer.style().hasOutOfFlowPosition();
     renderer.setStyle(WTF::move(newStyle), minimalStyleDifference);
-    m_builder.normalizeTreeAfterStyleChange(renderer, oldStyle);
+    m_builder.normalizeTreeAfterStyleChange(renderer, wasFloating, wasOutOfFlowPositioned);
 }
 
 void RenderTreeUpdater::updateSVGRenderer(Element& element)
@@ -421,14 +423,31 @@ void RenderTreeUpdater::updateSVGRenderer(Element& element)
 
 void RenderTreeUpdater::updateElementRenderer(Element& element, const Style::ElementUpdate& elementUpdate)
 {
+    // The update outlives this call (its pseudo-element styles are used later), so the render tree gets a clone.
+    updateElementRendererImpl(element, elementUpdate, [&] {
+        return Style::ComputedStyle::cloneIncludingPseudoElements(*elementUpdate.style);
+    });
+}
+
+void RenderTreeUpdater::updateElementRenderer(Element& element, Style::ElementUpdate&& elementUpdate)
+{
+    // The update is a temporary, so its style can be moved into the render tree instead of cloned.
+    updateElementRendererImpl(element, elementUpdate, [&] {
+        return WTF::move(*elementUpdate.style);
+    });
+}
+
+// `takeStyle` produces the style that is handed to the render tree. It is called at most once, and only on paths that
+// consume the style; everything else reads elementUpdate.style directly, so updates that change nothing don't copy it.
+template<typename TakeStyle>
+void RenderTreeUpdater::updateElementRendererImpl(Element& element, const Style::ElementUpdate& elementUpdate, NOESCAPE const TakeStyle& takeStyle)
+{
     if (!elementUpdate.style)
         return;
 
 #if ENABLE(CONTENT_CHANGE_OBSERVER)
     ContentChangeObserver::StyleChangeScope observingScope(m_document, element);
 #endif
-
-    auto elementUpdateStyle = Style::ComputedStyle::cloneIncludingPseudoElements(*elementUpdate.style);
 
     bool shouldTearDownRenderers = [&]() {
         if (element.isInTopLayer() && elementUpdate.changes.contains(Style::Change::Inherited) && elementUpdate.style->isSkippedRootOrSkippedContent())
@@ -455,17 +474,17 @@ void RenderTreeUpdater::updateElementRenderer(Element& element, const Style::Ele
     }
 
     bool hasDisplayContents = elementUpdate.style->display() == Style::DisplayType::Contents;
-    bool hasDisplayNonePreventingRendererCreation = elementUpdate.style->display() == Style::DisplayType::None && !element.rendererIsNeeded(elementUpdateStyle);
+    bool hasDisplayNonePreventingRendererCreation = elementUpdate.style->display() == Style::DisplayType::None && !element.rendererIsNeeded(*elementUpdate.style);
     bool hasDisplayContentsOrNone = hasDisplayContents || hasDisplayNonePreventingRendererCreation;
     if (hasDisplayContentsOrNone)
-        element.storeDisplayContentsOrNoneStyle(makeUnique<Style::ComputedStyle>(WTF::move(elementUpdateStyle)));
+        element.storeDisplayContentsOrNoneStyle(makeUnique<Style::ComputedStyle>(takeStyle()));
     else
         element.clearDisplayContentsOrNoneStyle();
 
     if (!hasDisplayContentsOrNone) {
-        if (!elementUpdateStyle.logicalContainIntrinsicWidth().hasAuto())
+        if (!elementUpdate.style->logicalContainIntrinsicWidth().hasAuto())
             element.clearLastRememberedLogicalWidth();
-        if (!elementUpdateStyle.logicalContainIntrinsicHeight().hasAuto())
+        if (!elementUpdate.style->logicalContainIntrinsicHeight().hasAuto())
             element.clearLastRememberedLogicalHeight();
     }
 
@@ -475,7 +494,7 @@ void RenderTreeUpdater::updateElementRenderer(Element& element, const Style::Ele
     // when the display:{contents|none} store above has not already taken it.
     RefPtr modelInPortal = dynamicDowncast<HTMLModelElement>(element);
     if (!hasDisplayContentsOrNone && modelInPortal && !element.renderer() && modelInPortal->isInsidePortal()) {
-        element.storeDisplayContentsOrNoneStyle(Style::ComputedStyle::clonePtr(elementUpdateStyle));
+        element.storeDisplayContentsOrNoneStyle(Style::ComputedStyle::clonePtr(*elementUpdate.style));
 
         // Pushed from here rather than during style resolution, which clears the cached computed style before it runs.
         if (!elementUpdate.changes.isEmpty()) {
@@ -499,7 +518,7 @@ void RenderTreeUpdater::updateElementRenderer(Element& element, const Style::Ele
     if (shouldCreateNewRenderer) {
         if (element.hasCustomStyleResolveCallbacks())
             element.willAttachRenderers();
-        createRenderer(element, WTF::move(elementUpdateStyle));
+        createRenderer(element, takeStyle());
 
         renderingParent().didCreateOrDestroyChildRenderer = true;
         return;
@@ -510,14 +529,14 @@ void RenderTreeUpdater::updateElementRenderer(Element& element, const Style::Ele
     auto& renderer = *element.renderer();
 
     if (elementUpdate.recompositeLayer) {
-        updateRendererStyle(renderer, WTF::move(elementUpdateStyle), Style::DifferenceResult::RecompositeLayer);
+        updateRendererStyle(renderer, takeStyle(), Style::DifferenceResult::RecompositeLayer);
         return;
     }
 
     if (!elementUpdate.changes)
         return;
 
-    updateRendererStyle(renderer, WTF::move(elementUpdateStyle), Style::DifferenceResult::Equal);
+    updateRendererStyle(renderer, takeStyle(), Style::DifferenceResult::Equal);
 }
 
 void RenderTreeUpdater::createRenderer(Element& element, Style::ComputedStyle&& style)

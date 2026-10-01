@@ -5504,10 +5504,16 @@ const Style::ComputedStyle* Element::lastStyleChangeEventStyle(const std::option
 
 void Element::setLastStyleChangeEventStyle(const std::optional<Style::PseudoElementIdentifier>& pseudoElementIdentifier, std::unique_ptr<const Style::ComputedStyle>&& style)
 {
+    replaceLastStyleChangeEventStyle(pseudoElementIdentifier, WTF::move(style));
+}
+
+std::unique_ptr<const Style::ComputedStyle> Element::replaceLastStyleChangeEventStyle(const std::optional<Style::PseudoElementIdentifier>& pseudoElementIdentifier, std::unique_ptr<const Style::ComputedStyle>&& style)
+{
     if (auto* animationData = animationRareData(pseudoElementIdentifier))
-        animationData->setLastStyleChangeEventStyle(WTF::move(style));
-    else if (style)
+        return animationData->replaceLastStyleChangeEventStyle(WTF::move(style));
+    if (style)
         ensureAnimationRareData(pseudoElementIdentifier).setLastStyleChangeEventStyle(WTF::move(style));
+    return nullptr;
 }
 
 bool Element::hasPropertiesOverridenAfterAnimation(const std::optional<Style::PseudoElementIdentifier>& pseudoElementIdentifier) const

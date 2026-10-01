@@ -164,6 +164,9 @@ struct Styleable {
         element.setLastStyleChangeEventStyle(pseudoElementIdentifier, WTF::move(style));
     }
 
+    // Like setLastStyleChangeEventStyle(), but hands the previous style back to the caller instead of destroying it.
+    std::unique_ptr<const Style::ComputedStyle> replaceLastStyleChangeEventStyle(std::unique_ptr<const Style::ComputedStyle>&&) const;
+
     bool hasPropertiesOverridenAfterAnimation() const
     {
         return element.hasPropertiesOverridenAfterAnimation(pseudoElementIdentifier);

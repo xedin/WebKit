@@ -664,13 +664,11 @@ void RenderTreeBuilder::moveAllChildrenIncludingFloats(RenderBlock& from, Render
     moveAllChildren(from, to, normalizeAfterInsertion);
 }
 
-void RenderTreeBuilder::normalizeTreeAfterStyleChange(RenderElement& renderer, Style::ComputedStyle& oldStyle)
+void RenderTreeBuilder::normalizeTreeAfterStyleChange(RenderElement& renderer, bool wasFloating, bool wasOutOfFlowPositioned)
 {
     if (!renderer.parent())
         return;
 
-    bool wasFloating = oldStyle.floating() != Float::None;
-    bool wasOutOfFlowPositioned = oldStyle.hasOutOfFlowPosition();
     bool isFloating = renderer.style().floating() != Float::None;
     bool isOutOfFlowPositioned = renderer.style().hasOutOfFlowPosition();
     bool startsAffectingParent = false;

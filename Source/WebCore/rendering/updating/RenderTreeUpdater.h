@@ -65,6 +65,8 @@ private:
     void updateTextRenderer(Text&, const Style::TextUpdate*, const ContainerNode* root = nullptr);
     void createTextRenderer(Text&, const Style::TextUpdate*);
     void updateElementRenderer(Element&, const Style::ElementUpdate&);
+    void updateElementRenderer(Element&, Style::ElementUpdate&&);
+    template<typename TakeStyle> void updateElementRendererImpl(Element&, const Style::ElementUpdate&, NOESCAPE const TakeStyle&);
     void updateSVGRenderer(Element&);
     void updateRendererStyle(RenderElement&, Style::ComputedStyle&&, Style::DifferenceResult);
     void updateRenderViewStyle();
