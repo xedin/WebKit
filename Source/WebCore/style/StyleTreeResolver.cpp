@@ -913,7 +913,8 @@ ElementUpdate TreeResolver::createAnimatedElementUpdate(ResolvedStyle&& resolved
         HashSet<AnimatableCSSProperty> animatedProperties;
         auto animatedStyle = Style::ComputedStyle::clonePtr(*resolvedStyle.style);
 
-        auto animationImpact = styleable.applyKeyframeEffects(*animatedStyle, animatedProperties, previousLastStyleChangeEventStyle.get(), resolutionContext);
+        // animatedStyle starts out as a copy of resolvedStyle.style, which stays unchanged, so it serves as the unanimated style.
+        auto animationImpact = styleable.applyKeyframeEffects(*animatedStyle, *resolvedStyle.style, animatedProperties, previousLastStyleChangeEventStyle.get(), resolutionContext);
 
         if (*resolvedStyle.style == *animatedStyle && animationImpact.isEmpty() && previousLastStyleChangeEventStyle)
             return { WTF::move(resolvedStyle.style), animationImpact };

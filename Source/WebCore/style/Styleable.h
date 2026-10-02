@@ -102,7 +102,8 @@ struct Styleable {
         return element.hasKeyframeEffects(pseudoElementIdentifier);
     }
 
-    OptionSet<AnimationImpact> applyKeyframeEffects(Style::ComputedStyle& targetStyle, HashSet<AnimatableCSSProperty>& affectedProperties, const Style::ComputedStyle* previousLastStyleChangeEventStyle, const Style::ResolutionContext&) const;
+    // `unanimatedStyle` is targetStyle as it was before any effect is applied; it must not change during the call.
+    OptionSet<AnimationImpact> applyKeyframeEffects(Style::ComputedStyle& targetStyle, const Style::ComputedStyle& unanimatedStyle, HashSet<AnimatableCSSProperty>& affectedProperties, const Style::ComputedStyle* previousLastStyleChangeEventStyle, const Style::ResolutionContext&) const;
 
     const AnimationCollection* animations() const
     {

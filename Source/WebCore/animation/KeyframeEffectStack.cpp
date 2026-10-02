@@ -138,7 +138,7 @@ void KeyframeEffectStack::setCSSAnimationList(std::optional<Style::Animations>&&
     m_isSorted = false;
 }
 
-OptionSet<AnimationImpact> KeyframeEffectStack::applyKeyframeEffects(Style::ComputedStyle& targetStyle, HashSet<AnimatableCSSProperty>& affectedProperties, const Style::ComputedStyle* previousLastStyleChangeEventStyle, const Style::ResolutionContext& resolutionContext)
+OptionSet<AnimationImpact> KeyframeEffectStack::applyKeyframeEffects(Style::ComputedStyle& targetStyle, const Style::ComputedStyle& unanimatedStyle, HashSet<AnimatableCSSProperty>& affectedProperties, const Style::ComputedStyle* previousLastStyleChangeEventStyle, const Style::ResolutionContext& resolutionContext)
 {
     OptionSet<AnimationImpact> impact;
 
@@ -150,8 +150,6 @@ OptionSet<AnimationImpact> KeyframeEffectStack::applyKeyframeEffects(Style::Comp
             || targetStyle.rotate() != previousStyle.rotate()
             || targetStyle.transform() != previousStyle.transform();
     }();
-
-    auto unanimatedStyle = Style::ComputedStyle::clone(targetStyle);
 
     // We iterate over a snapshot of the effect list as it may mutate during application.
     for (const auto& effect : copyToVector(sortedEffects())) {

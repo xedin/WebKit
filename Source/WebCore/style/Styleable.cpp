@@ -337,9 +337,9 @@ std::unique_ptr<const Style::ComputedStyle> Styleable::replaceLastStyleChangeEve
     return element.replaceLastStyleChangeEventStyle(pseudoElementIdentifier, WTF::move(style));
 }
 
-OptionSet<AnimationImpact> Styleable::applyKeyframeEffects(Style::ComputedStyle& targetStyle, HashSet<AnimatableCSSProperty>& affectedProperties, const Style::ComputedStyle* previousLastStyleChangeEventStyle, const Style::ResolutionContext& resolutionContext) const
+OptionSet<AnimationImpact> Styleable::applyKeyframeEffects(Style::ComputedStyle& targetStyle, const Style::ComputedStyle& unanimatedStyle, HashSet<AnimatableCSSProperty>& affectedProperties, const Style::ComputedStyle* previousLastStyleChangeEventStyle, const Style::ResolutionContext& resolutionContext) const
 {
-    return protect(element)->ensureKeyframeEffectStack(pseudoElementIdentifier).applyKeyframeEffects(targetStyle, affectedProperties, previousLastStyleChangeEventStyle, resolutionContext);
+    return protect(element)->ensureKeyframeEffectStack(pseudoElementIdentifier).applyKeyframeEffects(targetStyle, unanimatedStyle, affectedProperties, previousLastStyleChangeEventStyle, resolutionContext);
 }
 
 void Styleable::cancelStyleOriginatedAnimations() const
@@ -616,9 +616,12 @@ static void updateCSSTransitionsForStyleableAndProperty(const Styleable& styleab
     // https://drafts.csswg.org/css-transitions-1/#before-change-style
     // Define the before-change style as the computed values of all properties on the element as of the previous style change event, except with
     // any styles derived from declarative animations such as CSS Transitions, CSS Animations, and SMIL Animations updated to the current time.
-    auto beforeChangeStyle = [&]() -> const Style::ComputedStyle {
+    // The last style change event style is owned by mutable animation state that can change before this style's last use
+    // (e.g. when a running transition is canceled), so it is copied. currentStyle is a parameter and can simply be borrowed.
+    std::optional<Style::ComputedStyle> beforeChangeStyleStorage;
+    auto& beforeChangeStyle = [&]() -> const Style::ComputedStyle& {
         if (auto* lastStyleChangeEventStyle = styleable.lastStyleChangeEventStyle()) {
-            auto style = Style::ComputedStyle::clone(*lastStyleChangeEventStyle);
+            auto& style = beforeChangeStyleStorage.emplace(Style::ComputedStyle::clone(*lastStyleChangeEventStyle));
             if (auto* keyframeEffectStack = styleable.keyframeEffectStack()) {
                 for (const auto& effect : keyframeEffectStack->sortedEffects()) {
                     if (effect->animatesProperty(property))
@@ -627,7 +630,7 @@ static void updateCSSTransitionsForStyleableAndProperty(const Styleable& styleab
             }
             return style;
         }
-        return Style::ComputedStyle::clone(currentStyle);
+        return currentStyle;
     }();
 
     // https://drafts.csswg.org/css-transitions-1/#after-change-style
@@ -635,14 +638,16 @@ static void updateCSSTransitionsForStyleableAndProperty(const Styleable& styleab
     // of that style change event, but using the computed values of the animation-* properties from the before-change style, excluding any styles
     // from CSS Transitions in the computation, and inheriting from the after-change style of the parent. Note that this means the after-change
     // style does not differ from the before-change style due to newly created or canceled CSS Animations.
-    auto afterChangeStyle = [&]() -> const Style::ComputedStyle {
+    // Only a relevant CSS animation modifies the after-change style; otherwise it is newStyle itself, which is a parameter.
+    std::optional<Style::ComputedStyle> afterChangeStyleStorage;
+    auto& afterChangeStyle = [&]() -> const Style::ComputedStyle& {
         if (is<CSSAnimation>(animation) && animation->isRelevant()) {
-            auto animatedStyle = Style::ComputedStyle::clone(newStyle);
+            auto& animatedStyle = afterChangeStyleStorage.emplace(Style::ComputedStyle::clone(newStyle));
             animation->resolve(animatedStyle, { nullptr });
             return animatedStyle;
         }
 
-        return Style::ComputedStyle::clone(newStyle);
+        return newStyle;
     }();
 
     auto allowsDiscreteTransitions = matchingTransition && matchingTransition->behavior() == TransitionBehavior::AllowDiscrete;
@@ -706,14 +711,15 @@ static void updateCSSTransitionsForStyleableAndProperty(const Styleable& styleab
     ASSERT(hasMatchingTransitionProperty);
     if (hasRunningTransition && !propertyInStyleMatchesValueForTransitionInMap(property, afterChangeStyle, styleable.ensureRunningTransitionsByProperty(), document)) {
         auto previouslyRunningTransition = styleable.ensureRunningTransitionsByProperty().take(property);
-        auto previouslyRunningTransitionCurrentStyle = [&] {
+        std::optional<Style::ComputedStyle> previouslyRunningTransitionCurrentStyleStorage;
+        auto& previouslyRunningTransitionCurrentStyle = [&]() -> const Style::ComputedStyle& {
             if (auto* lastStyleChangeEventStyle = styleable.lastStyleChangeEventStyle()) {
-                auto style = Style::ComputedStyle::clone(*lastStyleChangeEventStyle);
+                auto& style = previouslyRunningTransitionCurrentStyleStorage.emplace(Style::ComputedStyle::clone(*lastStyleChangeEventStyle));
                 ASSERT(previouslyRunningTransition->keyframeEffect());
                 protect(*previouslyRunningTransition->keyframeEffect())->apply(style, { nullptr });
                 return style;
             }
-            return Style::ComputedStyle::clone(currentStyle);
+            return currentStyle;
         }();
         // 4. If the element has a running transition for the property, there is a matching transition-property value, and the end value of the running
         //    transition is not equal to the value of the property in the after-change style, then:

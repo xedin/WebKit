@@ -58,7 +58,7 @@ public:
     bool containsProperty(CSSPropertyID) const;
     bool isCurrentlyAffectingProperty(CSSPropertyID) const;
     bool requiresPseudoElement() const;
-    OptionSet<AnimationImpact> applyKeyframeEffects(Style::ComputedStyle& targetStyle, HashSet<AnimatableCSSProperty>& affectedProperties, const Style::ComputedStyle* previousLastStyleChangeEventStyle, const Style::ResolutionContext&);
+    OptionSet<AnimationImpact> applyKeyframeEffects(Style::ComputedStyle& targetStyle, const Style::ComputedStyle& unanimatedStyle, HashSet<AnimatableCSSProperty>& affectedProperties, const Style::ComputedStyle* previousLastStyleChangeEventStyle, const Style::ResolutionContext&);
     bool hasMatchingEffect(NOESCAPE const Function<bool(const KeyframeEffect&)>&) const;
 
     void effectAbilityToBeAcceleratedDidChange(const KeyframeEffect&);

@@ -1873,8 +1873,28 @@ void KeyframeEffect::setAnimatedPropertiesInStyle(Style::ComputedStyle& targetSt
     if (m_blendingKeyframes.isEmpty())
         return;
 
-    BlendingKeyframe propertySpecificKeyframeWithZeroOffset(0_css_percentage, Style::ComputedStyle::clonePtr(targetStyle));
-    BlendingKeyframe propertySpecificKeyframeWithOneOffset(100_css_percentage, Style::ComputedStyle::clonePtr(targetStyle));
+    // The implicit 0% and 100% keyframes take the underlying value, i.e. targetStyle before any property is blended into it.
+    // Only snapshot it when some property actually lacks an explicit 0% or 100% keyframe, using the same test as
+    // interpolationKeyframes(), since most effects specify both for every property and never use these keyframes.
+    bool needsImplicitKeyframeStyle = [&] {
+        for (auto property : properties) {
+            bool hasZeroOffsetKeyframe = false;
+            bool hasOneOffsetKeyframe = false;
+            for (size_t i = 0; i < numberOfKeyframes(); ++i) {
+                auto& keyframe = keyframeAtIndex(i);
+                if (!keyframe.hasResolvedOffset() || !keyframe.animatesProperty(property))
+                    continue;
+                hasZeroOffsetKeyframe |= !keyframe.offset();
+                hasOneOffsetKeyframe |= keyframe.offset() == 1;
+            }
+            if (!hasZeroOffsetKeyframe || !hasOneOffsetKeyframe)
+                return true;
+        }
+        return false;
+    }();
+
+    BlendingKeyframe propertySpecificKeyframeWithZeroOffset(0_css_percentage, needsImplicitKeyframeStyle ? Style::ComputedStyle::clonePtr(targetStyle) : nullptr);
+    BlendingKeyframe propertySpecificKeyframeWithOneOffset(100_css_percentage, needsImplicitKeyframeStyle ? Style::ComputedStyle::clonePtr(targetStyle) : nullptr);
 
     for (auto property : properties) {
         auto interval = interpolationKeyframes(property, iterationProgress, propertySpecificKeyframeWithZeroOffset, propertySpecificKeyframeWithOneOffset);
@@ -1889,8 +1909,26 @@ void KeyframeEffect::setAnimatedPropertiesInStyle(Style::ComputedStyle& targetSt
             continue;
         }
 
-        auto startKeyframeStyle = Style::ComputedStyle::clone(*startBlendingKeyframe->style());
-        auto endKeyframeStyle = Style::ComputedStyle::clone(*endBlendingKeyframe->style());
+        // The endpoint styles are only written to when composing or accumulating; plain interpolation only reads them.
+        // Copy each one the first time it is written to instead of up front.
+        std::optional<Style::ComputedStyle> startKeyframeStyleCopy;
+        std::optional<Style::ComputedStyle> endKeyframeStyleCopy;
+        auto startKeyframeStyle = [&]() -> const Style::ComputedStyle& {
+            return startKeyframeStyleCopy ? *startKeyframeStyleCopy : *startBlendingKeyframe->style();
+        };
+        auto endKeyframeStyle = [&]() -> const Style::ComputedStyle& {
+            return endKeyframeStyleCopy ? *endKeyframeStyleCopy : *endBlendingKeyframe->style();
+        };
+        auto mutableStartKeyframeStyle = [&]() -> Style::ComputedStyle& {
+            if (!startKeyframeStyleCopy)
+                startKeyframeStyleCopy.emplace(Style::ComputedStyle::clone(*startBlendingKeyframe->style()));
+            return *startKeyframeStyleCopy;
+        };
+        auto mutableEndKeyframeStyle = [&]() -> Style::ComputedStyle& {
+            if (!endKeyframeStyleCopy)
+                endKeyframeStyleCopy.emplace(Style::ComputedStyle::clone(*endBlendingKeyframe->style()));
+            return *endKeyframeStyleCopy;
+        };
 
         KeyframeInterpolation::CompositionCallback composeProperty = [&] (const KeyframeInterpolation::Keyframe& keyframe, CompositeOperation compositeOperation) {
             auto* blendingKeyframe = dynamicDowncast<BlendingKeyframe>(keyframe);
@@ -1900,9 +1938,9 @@ void KeyframeEffect::setAnimatedPropertiesInStyle(Style::ComputedStyle& targetSt
             }
 
             if (blendingKeyframe->offset() == startBlendingKeyframe->offset())
-                Style::Interpolation::interpolate(property, startKeyframeStyle, targetStyle, *blendingKeyframe->style(), 1, compositeOperation, *this);
+                Style::Interpolation::interpolate(property, mutableStartKeyframeStyle(), targetStyle, *blendingKeyframe->style(), 1, compositeOperation, *this);
             else
-                Style::Interpolation::interpolate(property, endKeyframeStyle, targetStyle, *blendingKeyframe->style(), 1, compositeOperation, *this);
+                Style::Interpolation::interpolate(property, mutableEndKeyframeStyle(), targetStyle, *blendingKeyframe->style(), 1, compositeOperation, *this);
         };
 
         KeyframeInterpolation::AccumulationCallback accumulateProperty = [&](const KeyframeInterpolation::Keyframe& keyframe) {
@@ -1912,18 +1950,22 @@ void KeyframeEffect::setAnimatedPropertiesInStyle(Style::ComputedStyle& targetSt
                 return;
             }
 
-            if (blendingKeyframe->offset() == startBlendingKeyframe->offset())
-                Style::Interpolation::interpolate(property, startKeyframeStyle, *endBlendingKeyframe->style(), startKeyframeStyle, 1, CompositeOperation::Accumulate, *this);
-            else
-                Style::Interpolation::interpolate(property, endKeyframeStyle, *endBlendingKeyframe->style(), endKeyframeStyle, 1, CompositeOperation::Accumulate, *this);
+            // The destination is also the second input, so make sure both refer to the same (copied) style.
+            if (blendingKeyframe->offset() == startBlendingKeyframe->offset()) {
+                auto& style = mutableStartKeyframeStyle();
+                Style::Interpolation::interpolate(property, style, *endBlendingKeyframe->style(), style, 1, CompositeOperation::Accumulate, *this);
+            } else {
+                auto& style = mutableEndKeyframeStyle();
+                Style::Interpolation::interpolate(property, style, *endBlendingKeyframe->style(), style, 1, CompositeOperation::Accumulate, *this);
+            }
         };
 
         KeyframeInterpolation::InterpolationCallback interpolateProperty = [&](double intervalProgress, double currentIteration, IterationCompositeOperation iterationCompositeOperation) {
-            Style::Interpolation::interpolate(property, targetStyle, startKeyframeStyle, endKeyframeStyle, intervalProgress, CompositeOperation::Replace, iterationCompositeOperation, currentIteration, *this);
+            Style::Interpolation::interpolate(property, targetStyle, startKeyframeStyle(), endKeyframeStyle(), intervalProgress, CompositeOperation::Replace, iterationCompositeOperation, currentIteration, *this);
         };
 
         KeyframeInterpolation::RequiresInterpolationForAccumulativeIterationCallback requiresInterpolationForAccumulativeIterationCallback = [&]() {
-            return Style::Interpolation::requiresInterpolationForAccumulativeIteration(property, startKeyframeStyle, endKeyframeStyle, *this);
+            return Style::Interpolation::requiresInterpolationForAccumulativeIteration(property, startKeyframeStyle(), endKeyframeStyle(), *this);
         };
 
         interpolateKeyframes(property, interval, iterationProgress, currentIteration, iterationDuration(), before, composeProperty, accumulateProperty, interpolateProperty, requiresInterpolationForAccumulativeIterationCallback);
