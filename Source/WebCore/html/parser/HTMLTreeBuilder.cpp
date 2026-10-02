@@ -512,9 +512,9 @@ static void NODELETE adjustSVGTagNameCase(AtomHTMLToken& token)
 static inline void adjustAttributes(const MemoryCompactLookupOnlyRobinHoodHashMap<AtomString, QualifiedName>& map, AtomHTMLToken& token)
 {
     for (auto& attribute : token.attributes()) {
-        const QualifiedName& casedName = map.get(attribute.localName());
-        if (!casedName.localName().isNull())
-            attribute.parserSetName(casedName);
+        // find() rather than get(): get() returns the QualifiedName by value, copying it (or nullQName()) for every attribute.
+        if (auto it = map.find(attribute.localName()); it != map.end())
+            attribute.parserSetName(it->value);
     }
 }
 
