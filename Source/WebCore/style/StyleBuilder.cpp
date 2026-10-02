@@ -520,12 +520,14 @@ void Builder::applyCustomProperty(const AtomString& name, CustomPropertyOrKeywor
         // context, whose custom properties are resolved lazily. Ensure this one is resolved there.
         if (auto* callingContextBuilder = m_state->callingContextBuilder())
             callingContextBuilder->applyCustomProperty(name);
-        RefPtr parentValue = protect(state().parentStyle().inheritedCustomProperties())->get(name);
+        // The parent style is a borrowed, immutable input while this style is built, so its maps need no protection.
+        // The value found is referenced once, by applyValue(), which stores it.
+        auto* parentValue = state().parentStyle().inheritedCustomProperties().get(name);
         if (parentValue && isInheritedCustomProperty(registeredCustomProperty)) {
             applyValue(*parentValue);
             return;
         }
-        if (RefPtr nonInheritedParentValue = protect(state().parentStyle().nonInheritedCustomProperties())->get(name)) {
+        if (auto* nonInheritedParentValue = state().parentStyle().nonInheritedCustomProperties().get(name)) {
             applyValue(*nonInheritedParentValue);
             return;
         }
@@ -774,7 +776,7 @@ std::optional<Builder::CustomPropertyOrKeyword> Builder::resolveCustomPropertyVa
         return { { *keyword } };
 
     if (!registered)
-        return { { CustomProperty::createForVariableData(name, *resolvedData) } };
+        return { { CustomProperty::createForVariableData(name, resolvedData.releaseNonNull()) } };
 
     return computeCustomPropertyValueForSyntax(name, registered->syntax, *resolvedData);
 }
