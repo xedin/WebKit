@@ -344,11 +344,13 @@ void MessagePort::dispatchMessages()
         LOG_WITH_STREAM(MessagePorts, stream << "MessagePort "_s << pendingActivity->object().m_identifier.logString() << " ("_s << &pendingActivity->object() << ") dispatching "_s << messages.size() << " messages"_s);
 
         RefPtr context = pendingActivity->object().scriptExecutionContext();
-        if (!context || !context->globalObject())
+        if (!context)
+            return;
+        auto* globalObject = context->globalObject();
+        if (!globalObject)
             return;
 
         ASSERT(context->isContextThread());
-        auto* globalObject = context->globalObject();
         Ref vm = globalObject->vm();
         auto scope = DECLARE_TOP_EXCEPTION_SCOPE(vm);
 
@@ -385,7 +387,10 @@ void MessagePort::dispatchMessages()
 void MessagePort::drainOneLocalMessage()
 {
     RefPtr context = scriptExecutionContext();
-    if (!context || !context->globalObject() || context->activeDOMObjectsAreSuspended() || isDetached())
+    if (!context)
+        return;
+    auto* globalObject = context->globalObject();
+    if (!globalObject || context->activeDOMObjectsAreSuspended() || isDetached())
         return;
 
     ASSERT(context->isContextThread());
@@ -393,8 +398,6 @@ void MessagePort::drainOneLocalMessage()
         if (workerGlobalScope->isClosing())
             return;
     }
-
-    auto* globalObject = context->globalObject();
     Ref vm = globalObject->vm();
     auto scope = DECLARE_TOP_EXCEPTION_SCOPE(vm);
 

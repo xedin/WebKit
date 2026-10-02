@@ -4766,7 +4766,7 @@ void Page::forEachDocumentFromMainFrame(const Frame& mainFrame, NOESCAPE const F
 {
     Vector<Ref<Document>, 8> documents;
     for (RefPtr frame = mainFrame; frame; frame = frame->tree().traverseNext()) {
-        RefPtr localFrame = dynamicDowncast<LocalFrame>(*frame);
+        auto* localFrame = dynamicDowncast<LocalFrame>(*frame); // Same object as `frame`, which keeps it alive.
         if (!localFrame)
             continue;
         if (RefPtr document = localFrame->document())
@@ -4805,7 +4805,7 @@ void Page::orientationDidChange()
 bool Page::findMatchingLocalDocument(NOESCAPE const Function<bool(Document&)>& functor) const
 {
     for (RefPtr frame = mainFrame(); frame; frame = frame->tree().traverseNext()) {
-        RefPtr localFrame = dynamicDowncast<LocalFrame>(*frame);
+        auto* localFrame = dynamicDowncast<LocalFrame>(*frame); // Same object as `frame`, which keeps it alive.
         if (!localFrame)
             continue;
         RefPtr document = localFrame->document();
@@ -4821,7 +4821,7 @@ void Page::forEachRenderableDocument(NOESCAPE const Function<void(Document&)>& f
 {
     Vector<Ref<Document>, 8> documents;
     for (RefPtr frame = mainFrame(); frame; frame = frame->tree().traverseNext()) {
-        RefPtr localFrame = dynamicDowncast<LocalFrame>(*frame);
+        auto* localFrame = dynamicDowncast<LocalFrame>(*frame); // Same object as `frame`, which keeps it alive.
         if (!localFrame)
             continue;
         RefPtr document = localFrame->document();
@@ -4876,7 +4876,7 @@ void Page::forEachWindowEventLoop(NOESCAPE const Function<void(WindowEventLoop&)
     HashSet<Ref<WindowEventLoop>> windowEventLoops;
     RefPtr<WindowEventLoop> lastEventLoop;
     for (RefPtr frame = mainFrame(); frame; frame = frame->tree().traverseNext()) {
-        RefPtr localFrame = dynamicDowncast<LocalFrame>(*frame);
+        auto* localFrame = dynamicDowncast<LocalFrame>(*frame); // Same object as `frame`, which keeps it alive.
         if (!localFrame)
             continue;
         RefPtr document = localFrame->document();

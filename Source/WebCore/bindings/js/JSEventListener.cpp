@@ -160,7 +160,8 @@ void JSEventListener::handleEvent(ScriptExecutionContext& scriptExecutionContext
 
     if (scriptExecutionContext.isDocument()) {
         auto* window = downcast<JSDOMWindow>(globalObject);
-        RefPtr localDOMWindow = dynamicDowncast<LocalDOMWindow>(window->wrapped());
+        // wrapped() is the wrapper's immutable `const Ref`, and the global object is alive while it runs a listener.
+        auto* localDOMWindow = dynamicDowncast<LocalDOMWindow>(window->wrapped());
         if (!localDOMWindow || !localDOMWindow->isCurrentlyDisplayedInFrame())
             return;
         if (wasCreatedFromMarkup()) {
