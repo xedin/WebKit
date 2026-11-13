@@ -105,7 +105,11 @@ ALLOW_SHARED_CACHE__YES_macosx = NO;
 OTHER_LDFLAGS_SHARED_CACHE = $(OTHER_LDFLAGS_SHARED_CACHE_$(ALLOW_SHARED_CACHE));
 OTHER_LDFLAGS_SHARED_CACHE_NO = -Wl,-not_for_dyld_shared_cache;
 
-OTHER_LDFLAGS = $(inherited) $(UNEXPORT_SWIFT_CXX_LDFLAGS) $(SOURCE_VERSION_LDFLAGS) $(WK_NO_STATIC_INITIALIZERS) $(OTHER_LDFLAGS_SHARED_CACHE) $(OTHER_LDFLAGS_ADDITIONAL_FRAMEWORKS) -Wl,-unexported_symbol,*s_heapSpec;
+// The development toolchain's libLTO stops on an assertion in the ObjC ARC code (getAttachedARCFunctionKind) when thin
+// LTO imports functions across this framework's modules; each module compiles on its own.
+WK_WEBGPU_LTO_IMPORT_LDFLAGS_thin = -Wl,-mllvm,-import-instr-limit=0;
+
+OTHER_LDFLAGS = $(inherited) $(UNEXPORT_SWIFT_CXX_LDFLAGS) $(SOURCE_VERSION_LDFLAGS) $(WK_NO_STATIC_INITIALIZERS) $(OTHER_LDFLAGS_SHARED_CACHE) $(OTHER_LDFLAGS_ADDITIONAL_FRAMEWORKS) -Wl,-unexported_symbol,*s_heapSpec $(WK_WEBGPU_LTO_IMPORT_LDFLAGS_$(WK_LTO_MODE));
 
 ENABLE_WEBGPU_SWIFT = ;
 
