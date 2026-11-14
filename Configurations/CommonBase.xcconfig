@@ -85,7 +85,11 @@ WK_OBJC_CLASS_RO_SIGNING_SWIFT_FLAGS[arch=arm64e] = -Xfrontend -no-sign-class-ro
 WK_COMMON_OTHER_CPLUSPLUSFLAGS = $(WK_AVAILABILITY_OVERLAY_FLAGS) $(WK_LIBCPP_ASSERTIONS_CFLAGS);
 OTHER_CPLUSPLUSFLAGS = $(inherited) $(WK_COMMON_OTHER_CPLUSPLUSFLAGS);
 
-_EXPERIMENTAL_SWIFT_EXPLICIT_MODULES = YES;
+// The development toolchain's dependency scanner, which Xcode's build service runs in process for explicit modules,
+// stops on an assertion (InProcessModuleCache: "Wrote the same PCM with different contents"); the Swift compiler
+// builds its modules itself instead.
+_EXPERIMENTAL_SWIFT_EXPLICIT_MODULES = NO;
+SWIFT_ENABLE_EXPLICIT_MODULES = NO;
 
 // The development toolchain's clang, which Xcode's build service runs in process for cached compilations (prefix
 // headers, Swift's explicit module dependencies), stops on an assertion (InProcessModuleCache: "Wrote the same PCM
