@@ -1223,7 +1223,6 @@ list(APPEND WebCore_PRIVATE_FRAMEWORK_HEADERS
     platform/PlatformContentFilter.h
     platform/ScrollAlignment.h
     platform/ScrollAnimation.h
-    platform/ScrollSnapAnimatorState.h
     platform/ScrollingEffectsController.h
     platform/SharedTimer.h
     platform/SystemSoundManager.h
@@ -1629,7 +1628,6 @@ list(APPEND WebCore_PRIVATE_FRAMEWORK_HEADERS
 
     page/mac/CorrectionIndicator.h
 
-    page/scrolling/mac/ScrollerMac.h
     page/scrolling/mac/ScrollerPairMac.h
     page/scrolling/mac/ScrollingCoordinatorMac.h
     page/scrolling/mac/ScrollingTreeFrameScrollingNodeMac.h

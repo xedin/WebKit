@@ -42,11 +42,13 @@ namespace WebCore {
 class ScrollingStateFixedNode;
 class ScrollingTree;
 class ScrollingTreeFrameScrollingNode;
+class ScrollingTreeLockedAccess;
 class ScrollingTreeScrollingNode;
 
 class ScrollingTreeNode : public ThreadSafeRefCountedAndCanMakeThreadSafeWeakPtr<ScrollingTreeNode> {
     WTF_MAKE_TZONE_ALLOCATED_EXPORT(ScrollingTreeNode, WEBCORE_EXPORT);
     friend class ScrollingTree;
+    friend class ScrollingTreeLockedAccess;
 public:
     virtual ~ScrollingTreeNode();
 
@@ -74,45 +76,50 @@ public:
     bool isOverflowScrollingNode() const { return nodeType() == ScrollingNodeType::Overflow; }
     bool isOverflowScrollProxyNode() const { return nodeType() == ScrollingNodeType::OverflowProxy; }
 
-    virtual bool commitStateBeforeChildren(const ScrollingStateNode&) = 0;
-    virtual bool commitStateAfterChildren(const ScrollingStateNode&) { return true; }
-    virtual void didCompleteCommitForNode() { }
+    SWIFT_UNSAFE virtual bool commitStateBeforeChildren(const ScrollingStateNode&) = 0;
+    SWIFT_UNSAFE virtual bool commitStateAfterChildren(const ScrollingStateNode&) { return true; }
+    SWIFT_UNSAFE virtual void didCompleteCommitForNode() { }
     
-    virtual void willBeDestroyed() { }
+    SWIFT_UNSAFE virtual void willBeDestroyed() { }
 
-    RefPtr<ScrollingTreeNode> parent() const { return m_parent; }
-    void setParent(RefPtr<ScrollingTreeNode>&& parent) { m_parent = parent; }
+    SWIFT_UNSAFE RefPtr<ScrollingTreeNode> parent() const { return m_parent; }
+    SWIFT_UNSAFE void setParent(RefPtr<ScrollingTreeNode>&& parent) { m_parent = parent; }
 
     WEBCORE_EXPORT bool isRootNode() const;
 
     const Vector<Ref<ScrollingTreeNode>>& children() const LIFETIME_BOUND { return m_children; }
 
-    void appendChild(Ref<ScrollingTreeNode>&&);
-    void removeChild(ScrollingTreeNode&);
-    void removeAllChildren();
+    SWIFT_UNSAFE void appendChild(Ref<ScrollingTreeNode>&&);
+    SWIFT_UNSAFE ALWAYS_INLINE void appendChild(ScrollingTreeNode& child) { appendChild(Ref { child }); }
+    // setParent() for Swift, which cannot pass a RefPtr&&. Called by the tree's commit, under the tree's lock.
+    SWIFT_UNSAFE void setParentNode(ScrollingTreeNode* parent) { m_parent = parent; }
+    SWIFT_UNSAFE void removeChild(ScrollingTreeNode&);
+    SWIFT_UNSAFE void removeAllChildren();
 
     virtual bool isRootOfHostedSubtree() const { return false; }
 
-    WEBCORE_EXPORT RefPtr<ScrollingTreeFrameScrollingNode> enclosingFrameNodeIncludingSelf();
-    WEBCORE_EXPORT RefPtr<ScrollingTreeScrollingNode> enclosingScrollingNodeIncludingSelf();
+    SWIFT_UNSAFE WEBCORE_EXPORT RefPtr<ScrollingTreeFrameScrollingNode> enclosingFrameNodeIncludingSelf();
+    SWIFT_UNSAFE WEBCORE_EXPORT RefPtr<ScrollingTreeScrollingNode> enclosingScrollingNodeIncludingSelf();
 
     WEBCORE_EXPORT void dump(WTF::TextStream&, OptionSet<ScrollingStateTreeAsTextBehavior>) const;
 
     FrameIdentifier frameIdentifier() const { return *m_parentFrameIdentifier; }
     void setFrameIdentifier(FrameIdentifier frameID) { m_parentFrameIdentifier = frameID; }
 
-protected:
-    ScrollingTreeNode(ScrollingTree&, ScrollingNodeType, ScrollingNodeID);
     RefPtr<ScrollingTree> scrollingTree() const { return m_scrollingTree; }
 
-    virtual void applyLayerPositions() = 0;
+protected:
+    ScrollingTreeNode(ScrollingTree&, ScrollingNodeType, ScrollingNodeID);
+
+    SWIFT_UNSAFE virtual void applyLayerPositions() = 0;
 
     WEBCORE_EXPORT virtual void dumpProperties(WTF::TextStream&, OptionSet<ScrollingStateTreeAsTextBehavior>) const;
 
     Vector<Ref<ScrollingTreeNode>> m_children;
 
 private:
-    ThreadSafeWeakPtr<ScrollingTree> m_scrollingTree;
+    // const: set only by the constructor, so ScrollingTreeLockedAccess::checkNode() reads it without its lock.
+    const ThreadSafeWeakPtr<ScrollingTree> m_scrollingTree;
 
     const ScrollingNodeType m_nodeType;
     const ScrollingNodeID m_nodeID;

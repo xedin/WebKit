@@ -979,6 +979,8 @@ set(WebCore_PRIVATE_FRAMEWORK_HEADERS
     css/CSSFontFaceDescriptors.h
     css/CSSFontFaceRule.h
     css/CSSFontPaletteValuesRule.h
+    css/CSSFunctionValue.h
+    css/CSSGridAutoFlowValue.h
     css/CSSGridTemplateListValue.h
     css/CSSGroupingRule.h
     css/CSSImportRule.h
@@ -988,6 +990,7 @@ set(WebCore_PRIVATE_FRAMEWORK_HEADERS
     css/CSSNamespacePrefixMap.h
     css/CSSPageDescriptors.h
     css/CSSPageRule.h
+    css/CSSPositionValue.h
     css/CSSPrimitiveValue.h
     css/CSSProperty.h
     css/CSSPropertyInitialValues.h
@@ -1002,6 +1005,7 @@ set(WebCore_PRIVATE_FRAMEWORK_HEADERS
     css/CSSStyleSheet.h
     css/CSSSubstitutionValue.h
     css/CSSToLengthConversionData.h
+    css/CSSTransformListValue.h
     css/CSSUnits.h
     css/CSSValue.h
     css/CSSValueList.h
@@ -1030,6 +1034,7 @@ set(WebCore_PRIVATE_FRAMEWORK_HEADERS
     css/calc/CSSCalcOperator.h
     css/calc/CSSCalcRandomCachingKey.h
     css/calc/CSSCalcRandomSharing.h
+    css/calc/CSSCalcSwiftTypes.h
     css/calc/CSSCalcSymbolTable.h
     css/calc/CSSCalcTree.h
     css/calc/CSSCalcType.h
@@ -1047,12 +1052,22 @@ set(WebCore_PRIVATE_FRAMEWORK_HEADERS
     css/parser/CSSParserContext.h
     css/parser/CSSParserEnum.h
     css/parser/CSSParserFastPaths.h
+    css/parser/CSSParserFastPathsSwiftTypes.h
     css/parser/CSSParserIdioms.h
     css/parser/CSSParserMode.h
     css/parser/CSSParserToken.h
     css/parser/CSSParserTokenRange.h
+    css/parser/CSSPropertyConsumerSwiftBuilders.h
+    css/parser/CSSPropertyConsumerSwiftTypes.h
     css/parser/CSSPropertyParser.h
+    css/parser/CSSPropertyParserConsumer+Animations.h
     css/parser/CSSPropertyParserConsumer+Color.h
+    css/parser/CSSPropertyParserConsumer+Easing.h
+    css/parser/CSSPropertyParserConsumer+Filter.h
+    css/parser/CSSPropertyParserConsumer+Font.h
+    css/parser/CSSPropertyParserConsumer+Image.h
+    css/parser/CSSPropertyParserConsumer+LinkParameters.h
+    css/parser/CSSPropertyParserState.h
     css/parser/CSSSelectorParserContext.h
     css/parser/CSSTokenizer.h
     css/parser/CSSTokenizerInputStream.h
@@ -1063,8 +1078,20 @@ set(WebCore_PRIVATE_FRAMEWORK_HEADERS
     css/query/MediaQuery.h
 
     css/typedom/CSSNumericValue.h
+    css/typedom/CSSNumericValueSwiftTypes.h
     css/typedom/CSSOMKeywordValue.h
     css/typedom/CSSStyleValue.h
+    css/typedom/CSSUnitValue.h
+
+    css/typedom/numeric/CSSMathClamp.h
+    css/typedom/numeric/CSSMathInvert.h
+    css/typedom/numeric/CSSMathMax.h
+    css/typedom/numeric/CSSMathMin.h
+    css/typedom/numeric/CSSMathOperator.h
+    css/typedom/numeric/CSSMathProduct.h
+    css/typedom/numeric/CSSMathSum.h
+    css/typedom/numeric/CSSMathValue.h
+    css/typedom/numeric/CSSNumericArray.h
     css/typedom/numeric/CSSNumericBaseType.h
     css/typedom/numeric/CSSNumericType.h
 
@@ -1074,20 +1101,54 @@ set(WebCore_PRIVATE_FRAMEWORK_HEADERS
     css/values/CSSValueConcepts.h
     css/values/CSSValueTypes.h
 
+    css/values/backgrounds/CSSBorderImage.h
+    css/values/backgrounds/CSSBorderImageOutset.h
+    css/values/backgrounds/CSSBorderImageRepeat.h
+    css/values/backgrounds/CSSBorderImageSlice.h
+    css/values/backgrounds/CSSBorderImageSource.h
+    css/values/backgrounds/CSSBorderImageWidth.h
+
     css/values/borders/CSSBorderRadius.h
     css/values/borders/CSSBoxShadow.h
+    css/values/borders/CSSBoxShadowProperty.h
 
     css/values/color-adjust/CSSColorScheme.h
 
     css/values/color/CSSColor.h
     css/values/color/CSSColorDescriptors.h
     css/values/color/CSSColorInterpolationMethod.h
+    css/values/color/CSSColorMix.h
     css/values/color/CSSColorType.h
+    css/values/color/CSSContrastColor.h
+    css/values/color/CSSDynamicRangeLimit.h
+    css/values/color/CSSDynamicRangeLimitMix.h
     css/values/color/CSSHexColor.h
     css/values/color/CSSKeywordColor.h
+    css/values/color/CSSLightDarkColor.h
     css/values/color/CSSResolvedColor.h
 
     css/values/counter-styles/CSSCounterStyle.h
+
+    css/values/easing/CSSCubicBezierEasingFunction.h
+    css/values/easing/CSSEasingFunction.h
+    css/values/easing/CSSLinearEasingFunction.h
+    css/values/easing/CSSSpringEasingFunction.h
+    css/values/easing/CSSStepsEasingFunction.h
+
+    css/values/filter-effects/CSSAppleColorFilter.h
+    css/values/filter-effects/CSSAppleInvertLightnessFunction.h
+    css/values/filter-effects/CSSBlurFunction.h
+    css/values/filter-effects/CSSBrightnessFunction.h
+    css/values/filter-effects/CSSContrastFunction.h
+    css/values/filter-effects/CSSDropShadowFunction.h
+    css/values/filter-effects/CSSFilter.h
+    css/values/filter-effects/CSSFilterReference.h
+    css/values/filter-effects/CSSGrayscaleFunction.h
+    css/values/filter-effects/CSSHueRotateFunction.h
+    css/values/filter-effects/CSSInvertFunction.h
+    css/values/filter-effects/CSSOpacityFunction.h
+    css/values/filter-effects/CSSSaturateFunction.h
+    css/values/filter-effects/CSSSepiaFunction.h
 
     css/values/flexbox/CSSFlexWrap.h
 
@@ -1103,10 +1164,20 @@ set(WebCore_PRIVATE_FRAMEWORK_HEADERS
 
     css/values/images/CSSGradient.h
     css/values/images/CSSGradientColorInterpolationMethod.h
+    css/values/images/CSSImageWrapper.h
 
     css/values/link-params/CSSLinkParameter.h
 
+    css/values/masking/CSSMaskBorder.h
+    css/values/masking/CSSMaskBorderOutset.h
+    css/values/masking/CSSMaskBorderRepeat.h
+    css/values/masking/CSSMaskBorderSlice.h
+    css/values/masking/CSSMaskBorderSource.h
+    css/values/masking/CSSMaskBorderWidth.h
+
     css/values/motion/CSSRayFunction.h
+
+    css/values/non-standard/CSSWebkitBoxReflect.h
 
     css/values/primitives/CSSCoordinatePair.h
     css/values/primitives/CSSCustomIdent.h
@@ -1613,9 +1684,19 @@ set(WebCore_PRIVATE_FRAMEWORK_HEADERS
 
     html/forms/FileIconLoader.h
 
+    html/parser/CSSPreloadScanner.h
     html/parser/HTMLDocumentParserFastPath.h
+    html/parser/HTMLMetaCharsetParser.h
+    html/parser/HTMLMicrosyntaxesSwiftTypes.h
     html/parser/HTMLParserIdioms.h
+    html/parser/HTMLParserOptions.h
     html/parser/HTMLParserScriptingFlagPolicy.h
+    html/parser/HTMLPreloadScanner.h
+    html/parser/HTMLResourcePreloader.h
+    html/parser/HTMLToken.h
+    html/parser/HTMLTokenizer.h
+    html/parser/InputStreamPreprocessor.h
+    html/parser/HTMLSrcsetParser.h
 
     html/shadow/TextControlInnerElements.h
     html/shadow/TextPlaceholderElement.h
@@ -1834,6 +1915,7 @@ set(WebCore_PRIVATE_FRAMEWORK_HEADERS
     loader/ResourceTiming.h
     loader/ResourceTimingInformation.h
     loader/ServerTiming.h
+    loader/ServerTimingParser.h
     loader/ShouldTreatAsContinuingLoad.h
     loader/SpeculationRules.h
     loader/SubframeLoader.h
@@ -2084,6 +2166,7 @@ set(WebCore_PRIVATE_FRAMEWORK_HEADERS
     page/csp/ContentSecurityPolicyClient.h
     page/csp/ContentSecurityPolicyHash.h
     page/csp/ContentSecurityPolicyResponseHeaders.h
+    page/csp/ContentSecurityPolicySwift.h
 
     page/scrolling/AsyncScrollingCoordinator.h
     page/scrolling/ScrollSnapOffsetsInfo.h
@@ -2117,6 +2200,7 @@ set(WebCore_PRIVATE_FRAMEWORK_HEADERS
     page/scrolling/ScrollingTreePluginHostingNode.h
     page/scrolling/ScrollingTreePluginScrollingNode.h
     page/scrolling/ScrollingTreePositionedNode.h
+    page/scrolling/ScrollingTreeScrollPhysicsClient.h
     page/scrolling/ScrollingTreeScrollingNode.h
     page/scrolling/ScrollingTreeScrollingNodeDelegate.h
     page/scrolling/ScrollingTreeStickyNode.h
@@ -2257,9 +2341,9 @@ set(WebCore_PRIVATE_FRAMEWORK_HEADERS
     platform/ScriptExecutionContextIdentifier.h
     platform/ScrollAlignment.h
     platform/ScrollAnimation.h
-    platform/ScrollAnimationMomentum.h
     platform/ScrollAnimator.h
-    platform/ScrollSnapAnimatorState.h
+    platform/ScrollAnimatorScrollPhysicsClient.h
+    platform/ScrollPhysicsTypes.h
     platform/ScrollTypes.h
     platform/ScrollView.h
     platform/ScrollableArea.h
@@ -2269,6 +2353,7 @@ set(WebCore_PRIVATE_FRAMEWORK_HEADERS
     platform/ScrollbarThemeComposite.h
     platform/ScrollbarsController.h
     platform/ScrollbarsControllerInlines.h
+    platform/ScrollingEffectsClock.h
     platform/ScrollingEffectsController.h
     platform/SearchPopupMenu.h
     platform/SelectionGeometry.h
@@ -2896,6 +2981,7 @@ set(WebCore_PRIVATE_FRAMEWORK_HEADERS
     platform/network/FormData.h
     platform/network/HTTPCookieAcceptPolicy.h
     platform/network/HTTPHeaderMap.h
+    platform/network/HTTPHeaderParsersTypes.h
     platform/network/HTTPHeaderValues.h
     platform/network/HTTPParsers.h
     platform/network/HTTPSByDefaultMode.h

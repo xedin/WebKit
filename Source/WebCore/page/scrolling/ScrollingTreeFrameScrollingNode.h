@@ -42,7 +42,7 @@ class WEBCORE_EXPORT ScrollingTreeFrameScrollingNode : public ScrollingTreeScrol
 public:
     virtual ~ScrollingTreeFrameScrollingNode();
 
-    bool commitStateBeforeChildren(const ScrollingStateNode&) override;
+    SWIFT_UNSAFE bool commitStateBeforeChildren(const ScrollingStateNode&) override;
     
     bool visualViewportIsSmallerThanLayoutViewport() const { return m_visualViewportIsSmallerThanLayoutViewport; }
 
@@ -66,7 +66,7 @@ public:
 
     // Repositions the scrolling layers after a delegated scale change, without the related-layer work
     // wasScrolledByDelegatedScrolling() has already done.
-    void repositionScrollingLayersForDelegatedScaleChange() WTF_REQUIRES_LOCK(scrollingTree()->treeLock());
+    SWIFT_UNSAFE void repositionScrollingLayersForDelegatedScaleChange() WTF_REQUIRES_LOCK(scrollingTree()->treeLock());
     int headerHeight() const { return m_headerHeight; }
     int footerHeight() const { return m_footerHeight; }
     FloatBoxExtent obscuredContentInsets() const { return m_obscuredContentInsets; }
@@ -127,5 +127,12 @@ private:
 } // namespace WebCore
 
 SPECIALIZE_TYPE_TRAITS_SCROLLING_NODE(ScrollingTreeFrameScrollingNode, isFrameScrollingNode())
+
+namespace WebCore {
+// For Swift, which cannot convert a C++ class to its base: the frame scrolling node as a scrolling node.
+inline RefPtr<ScrollingTreeScrollingNode> asScrollingTreeScrollingNode(ScrollingTreeFrameScrollingNode& node) { return &node; }
+// For Swift, which cannot cast between C++ classes: the node as a frame scrolling node, or null.
+inline RefPtr<ScrollingTreeFrameScrollingNode> asScrollingTreeFrameScrollingNode(ScrollingTreeNode& node) { return dynamicDowncast<ScrollingTreeFrameScrollingNode>(node); }
+}
 
 #endif // ENABLE(ASYNC_SCROLLING)

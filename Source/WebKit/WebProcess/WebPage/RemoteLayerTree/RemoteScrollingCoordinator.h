@@ -41,6 +41,7 @@ namespace WebKit {
 class WebPage;
 class RemoteScrollingCoordinatorTransaction;
 class RemoteScrollingUIState;
+class RemoteScrollingCoordinatorPendingScrollRequests;
 
 class RemoteScrollingCoordinator final : public WebCore::AsyncScrollingCoordinator, public IPC::MessageReceiver {
     WTF_MAKE_TZONE_ALLOCATED(RemoteScrollingCoordinator);
@@ -50,8 +51,8 @@ public:
         return adoptRef(*new RemoteScrollingCoordinator(page));
     }
 
-    void ref() const final { WebCore::AsyncScrollingCoordinator::ref(); }
-    void deref() const final { WebCore::AsyncScrollingCoordinator::deref(); }
+    SWIFT_UNSAFE void ref() const final { WebCore::AsyncScrollingCoordinator::ref(); }
+    SWIFT_UNSAFE void deref() const final { WebCore::AsyncScrollingCoordinator::deref(); }
 
     RemoteScrollingCoordinatorTransaction buildTransaction(WebCore::FrameIdentifier);
 
@@ -112,11 +113,8 @@ private:
     HashSet<WebCore::ScrollingNodeID> m_nodesWithActiveScrollSnap;
     HashSet<WebCore::ScrollingNodeID> m_nodesWithActiveUserScrolls;
 
-    struct PendingScrollResponseInfo {
-        Markable<WebCore::ScrollRequestIdentifier> identifier;
-        bool pendingScrollEnd { false };
-    };
-    HashMap<WebCore::ScrollingNodeID, PendingScrollResponseInfo> m_scrollRequestsPendingResponse;
+    // Read and written on the main thread.
+    const std::unique_ptr<RemoteScrollingCoordinatorPendingScrollRequests> m_scrollRequestsPendingResponse;
 
     NodeAndGestureState m_currentWheelGestureInfo;
 

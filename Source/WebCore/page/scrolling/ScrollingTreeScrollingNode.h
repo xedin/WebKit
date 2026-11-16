@@ -69,12 +69,12 @@ class WEBCORE_EXPORT ScrollingTreeScrollingNode : public ScrollingTreeNode {
 public:
     virtual ~ScrollingTreeScrollingNode();
 
-    bool commitStateBeforeChildren(const ScrollingStateNode&) override;
-    bool commitStateAfterChildren(const ScrollingStateNode&) override;
-    NODELETE void didCompleteCommitForNode() final;
+    SWIFT_UNSAFE bool commitStateBeforeChildren(const ScrollingStateNode&) override;
+    SWIFT_UNSAFE bool commitStateAfterChildren(const ScrollingStateNode&) override;
+    NODELETE SWIFT_UNSAFE void didCompleteCommitForNode() final;
 
     virtual bool canHandleWheelEvent(const PlatformWheelEvent&, EventTargeting) const;
-    virtual WheelEventHandlingResult handleWheelEvent(const PlatformWheelEvent&, EventTargeting = EventTargeting::Propagate);
+    SWIFT_UNSAFE virtual WheelEventHandlingResult handleWheelEvent(const PlatformWheelEvent&, EventTargeting = EventTargeting::Propagate);
     virtual void handleWheelEventPhase(const PlatformWheelEventPhase) { }
     
     FloatPoint currentScrollPosition() const { return m_currentScrollPosition; }
@@ -83,7 +83,7 @@ public:
     FloatPoint lastCommittedScrollPosition() const { return m_lastCommittedScrollPosition; }
     FloatSize scrollDeltaSinceLastCommit() const { return m_currentScrollPosition - m_lastCommittedScrollPosition; }
 
-    const IntPoint& scrollOrigin() const LIFETIME_BOUND { return m_scrollOrigin; }
+    IntPoint scrollOrigin() const { return m_scrollOrigin; }
 
     RectEdges<bool> edgePinnedState() const;
 
@@ -94,27 +94,27 @@ public:
     void setScrollSnapInProgress(bool);
 
 #if HAVE(RUBBER_BANDING)
-    std::optional<RubberbandingState> captureRubberbandingState() const;
+    SWIFT_UNSAFE std::optional<RubberbandingState> captureRubberbandingState() const;
     void setRestoredRubberbandingInProgress(bool inProgress) { m_restoredRubberbandingInProgress = inProgress; }
     bool restoredRubberbandingInProgress() const { return m_restoredRubberbandingInProgress; }
 #endif
 
-    virtual bool startAnimatedScrollToPosition(FloatPoint, ScrollAnimationCurve);
-    virtual void stopAnimatedScroll(EnumSet<AnimatedScrollType>);
-    void stopSpringAnimation();
+    SWIFT_UNSAFE virtual bool startAnimatedScrollToPosition(FloatPoint, ScrollAnimationCurve);
+    SWIFT_UNSAFE virtual void stopAnimatedScroll(EnumSet<AnimatedScrollType>);
+    SWIFT_UNSAFE void stopSpringAnimation();
 
-    virtual void serviceScrollAnimation(MonotonicTime);
+    SWIFT_UNSAFE virtual void serviceScrollAnimation(MonotonicTime);
 
     // These are imperative; they adjust the scrolling layers.
-    void scrollTo(const FloatPoint&, ScrollType = ScrollType::User, ScrollClamping = ScrollClamping::Clamped);
-    void scrollBy(const FloatSize&, ScrollClamping = ScrollClamping::Clamped);
+    SWIFT_UNSAFE void scrollTo(const FloatPoint&, ScrollType = ScrollType::User, ScrollClamping = ScrollClamping::Clamped);
+    SWIFT_UNSAFE void scrollBy(const FloatSize&, ScrollClamping = ScrollClamping::Clamped);
 
-    void handleScrollPositionRequests(const ScrollRequestData&);
+    SWIFT_UNSAFE void handleScrollPositionRequests(const ScrollRequestData&);
 
-    void handleKeyboardScrollRequest(const RequestedKeyboardScrollData&);
-    void requestKeyboardScroll(const RequestedKeyboardScrollData&);
+    SWIFT_UNSAFE void handleKeyboardScrollRequest(const RequestedKeyboardScrollData&);
+    SWIFT_UNSAFE void requestKeyboardScroll(const RequestedKeyboardScrollData&);
 
-    void wasScrolledByDelegatedScrolling(const FloatPoint& position, std::optional<FloatRect> overrideLayoutViewport = { }, ScrollingLayerPositionAction = ScrollingLayerPositionAction::Sync);
+    SWIFT_UNSAFE void wasScrolledByDelegatedScrolling(const FloatPoint& position, std::optional<FloatRect> overrideLayoutViewport = { }, ScrollingLayerPositionAction = ScrollingLayerPositionAction::Sync);
     
 #if ENABLE(SCROLLING_THREAD)
     OptionSet<SynchronousScrollingReason> synchronousScrollingReasons() const { return m_synchronousScrollingReasons; }
@@ -123,8 +123,8 @@ public:
     bool hasNonRepaintSynchronousScrollingReasons() const { return !(m_synchronousScrollingReasons - SynchronousScrollingReason::HasSlowRepaintObjects).isEmpty(); }
 #endif
 
-    const FloatSize& scrollableAreaSize() const LIFETIME_BOUND { return m_scrollableAreaSize; }
-    const FloatSize& totalContentsSize() const LIFETIME_BOUND { return m_totalContentsSize; }
+    FloatSize scrollableAreaSize() const { return m_scrollableAreaSize; }
+    FloatSize totalContentsSize() const { return m_totalContentsSize; }
 
     NativeScrollbarVisibility horizontalNativeScrollbarVisibility() const { return m_scrollableAreaParameters.horizontalNativeScrollbarVisibility; }
     NativeScrollbarVisibility verticalNativeScrollbarVisibility() const { return m_scrollableAreaParameters.verticalNativeScrollbarVisibility; }
@@ -162,11 +162,24 @@ public:
 
     NODELETE ScrollbarRevealBehavior takeScrollbarRevealBehaviorForNextScrollbarUpdate();
 
-protected:
-    ScrollingTreeScrollingNode(ScrollingTree&, ScrollingNodeType, ScrollingNodeID);
-
     virtual FloatPoint minimumScrollPosition() const;
     virtual FloatPoint maximumScrollPosition() const;
+
+    void willStartAnimatedScroll();
+    void didStopAnimatedScroll();
+    void willStartWheelEventScroll();
+    void didStopWheelEventScroll();
+
+    void setScrollAnimationInProgress(bool);
+    void setTotalContentsSizeForRubberBand(const FloatSize& totalContentsSizeForRubberBand) { m_totalContentsSizeForRubberBand = totalContentsSizeForRubberBand; }
+
+    ScrollElasticity horizontalScrollElasticity() const { return m_scrollableAreaParameters.horizontalScrollElasticity; }
+    ScrollElasticity verticalScrollElasticity() const { return m_scrollableAreaParameters.verticalScrollElasticity; }
+
+    bool shouldRubberBandOnSide(BoxSide, RectEdges<bool> pinnedEdges) const;
+
+protected:
+    ScrollingTreeScrollingNode(ScrollingTree&, ScrollingNodeType, ScrollingNodeID);
 
     FloatPoint clampScrollPosition(const FloatPoint&) const;
     
@@ -174,13 +187,7 @@ protected:
     
     FloatPoint adjustedScrollPosition(const FloatPoint&, ScrollClamping = ScrollClamping::Clamped) const;
 
-    void willStartAnimatedScroll();
-    void didStopAnimatedScroll();
-    void willStartWheelEventScroll();
-    void didStopWheelEventScroll();
     void didStopProgrammaticScroll();
-
-    void setScrollAnimationInProgress(bool);
 
     virtual void currentScrollPositionChanged(ScrollType, ScrollingLayerPositionAction = ScrollingLayerPositionAction::Sync);
     virtual void updateViewportForCurrentScrollPosition(std::optional<FloatRect> = { }) { }
@@ -199,11 +206,9 @@ protected:
     // computing the stretchAmount(). Using the old value will keep the animation smooth. When there is no rubber-band in progress at
     // all, m_totalContentsSizeForRubberBand should be equivalent to m_totalContentsSize.
     const FloatSize& totalContentsSizeForRubberBand() const LIFETIME_BOUND { return m_totalContentsSizeForRubberBand; }
-    void setTotalContentsSizeForRubberBand(const FloatSize& totalContentsSizeForRubberBand) { m_totalContentsSizeForRubberBand = totalContentsSizeForRubberBand; }
 
-    ScrollElasticity horizontalScrollElasticity() const { return m_scrollableAreaParameters.horizontalScrollElasticity; }
-    ScrollElasticity verticalScrollElasticity() const { return m_scrollableAreaParameters.verticalScrollElasticity; }
-
+    // Public for the tree's wheel event handling in Swift (ScrollingTreeLatchingController.swift).
+public:
     bool horizontalOverscrollBehaviorPreventsPropagation() const { return m_scrollableAreaParameters.horizontalOverscrollBehavior != OverscrollBehavior::Auto; }
     bool verticalOverscrollBehaviorPreventsPropagation() const { return m_scrollableAreaParameters.verticalOverscrollBehavior != OverscrollBehavior::Auto; }
 
@@ -211,11 +216,10 @@ protected:
     bool overscrollBehaviorAllowsVerticalRubberBand() const { return m_scrollableAreaParameters.verticalOverscrollBehavior != OverscrollBehavior::None; }
 
     NODELETE PlatformWheelEvent eventForPropagation(const PlatformWheelEvent&) const;
-    NODELETE ScrollPropagationInfo computeScrollPropagation(const FloatSize&) const;
+protected:
     bool overscrollBehaviorAllowsRubberBand() const { return m_scrollableAreaParameters.horizontalOverscrollBehavior != OverscrollBehavior::None ||  m_scrollableAreaParameters.verticalOverscrollBehavior != OverscrollBehavior::None; }
 
     bool shouldRubberBand(const PlatformWheelEvent&, EventTargeting) const;
-    bool shouldRubberBandOnSide(BoxSide, RectEdges<bool> pinnedEdges) const;
 
     void handleScrollPositionRequest(const RequestedScrollData&);
 
@@ -254,5 +258,19 @@ private:
 } // namespace WebCore
 
 SPECIALIZE_TYPE_TRAITS_SCROLLING_NODE(ScrollingTreeScrollingNode, isScrollingNode())
+
+namespace WebCore {
+// For Swift, which cannot cast between C++ classes: the node as a scrolling node, or null.
+inline RefPtr<ScrollingTreeScrollingNode> asScrollingTreeScrollingNode(ScrollingTreeNode& node) { return dynamicDowncast<ScrollingTreeScrollingNode>(node); }
+// For Swift: offers the event to the tree's node with the ID if it is a scrolling node, and returns whether it is.
+inline bool handleWheelEventOnScrollingNodeForID(const ScrollingTreeLockedAccess& locked, ScrollingNodeID nodeID, const PlatformWheelEvent& wheelEvent, WheelEventHandlingResult& result)
+{
+    RefPtr node = dynamicDowncast<ScrollingTreeScrollingNode>(locked.nodeForID(nodeID));
+    if (!node)
+        return false;
+    result = locked.handleWheelEvent(*node, wheelEvent, EventTargeting::Propagate);
+    return true;
+}
+}
 
 #endif // ENABLE(ASYNC_SCROLLING)

@@ -48,8 +48,8 @@ class ScrollingStateTree final : public CanMakeCheckedPtr<ScrollingStateTree> {
     WTF_OVERRIDE_DELETE_FOR_CHECKED_PTR(ScrollingStateTree);
     friend class ScrollingStateNode;
 public:
-    static UniqueRef<ScrollingStateTree> create(AsyncScrollingCoordinator* scrollingCoordinator = nullptr) { return UniqueRef { *new ScrollingStateTree(scrollingCoordinator) }; }
-    WEBCORE_EXPORT static std::optional<UniqueRef<ScrollingStateTree>> createAfterReconstruction(bool, bool, RefPtr<ScrollingStateFrameScrollingNode>&&);
+    SWIFT_UNSAFE static UniqueRef<ScrollingStateTree> create(AsyncScrollingCoordinator* scrollingCoordinator = nullptr) { return UniqueRef { *new ScrollingStateTree(scrollingCoordinator) }; }
+    SWIFT_UNSAFE WEBCORE_EXPORT static std::optional<UniqueRef<ScrollingStateTree>> createAfterReconstruction(bool, bool, RefPtr<ScrollingStateFrameScrollingNode>&&);
     WEBCORE_EXPORT ~ScrollingStateTree();
 
     NODELETE WEBCORE_EXPORT RefPtr<ScrollingStateFrameScrollingNode> rootStateNode() const;
@@ -58,7 +58,7 @@ public:
     ScrollingNodeID createUnparentedNode(ScrollingNodeType, ScrollingNodeID);
     WEBCORE_EXPORT std::optional<ScrollingNodeID> insertNode(ScrollingNodeType, ScrollingNodeID, std::optional<ScrollingNodeID> parentID, size_t childIndex);
     void unparentNode(std::optional<ScrollingNodeID>);
-    void unparentChildrenAndDestroyNode(std::optional<ScrollingNodeID>);
+    WEBCORE_EXPORT void unparentChildrenAndDestroyNode(std::optional<ScrollingNodeID>);
     void detachAndDestroySubtree(std::optional<ScrollingNodeID>);
     void clear();
 

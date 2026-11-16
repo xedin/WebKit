@@ -39,9 +39,9 @@
 #include <WebCore/RubberbandingState.h>
 #include <WebCore/ScrollTypes.h>
 #include <WebCore/ScrollingCoordinatorTypes.h>
-#include <WebCore/ScrollingTreeGestureState.h>
 #include <WebCore/ScrollingTreeLatchingController.h>
 #include <WebCore/WheelEventTestMonitor.h>
+#include <wtf/ForbidHeapAllocation.h>
 #include <wtf/HashMap.h>
 #include <wtf/Lock.h>
 #include <wtf/MonotonicTime.h>
@@ -49,6 +49,9 @@
 #include <wtf/ThreadSafeRefCounted.h>
 #include <wtf/ThreadSafeWeakHashSet.h>
 #include <wtf/TypeCasts.h>
+#include <array>
+#include <wtf/Markable.h>
+#include <wtf/ThreadSafeWeakPtr.h>
 
 namespace WebCore {
 
@@ -61,6 +64,11 @@ class ScrollingTreeOverflowScrollProxyNode;
 class ScrollingTreePositionedNode;
 class ScrollingTreeScrollingNode;
 class ScrollingTreeFrameHostingNode;
+class ScrollingTreeLockedAccess;
+
+// Whether a ScrollingTreeLockedAccess was made for the commit of tree state, which may change the tree's structure.
+enum class ScrollingTreeAccessMode : bool { Event, Commit };
+
 enum class EventListenerRegionType : uint64_t;
 
 using FramesPerSecond = unsigned;
@@ -77,6 +85,7 @@ enum class RequestsScrollHandling : uint8_t {
 class ScrollingTree : public ThreadSafeRefCountedAndCanMakeThreadSafeWeakPtr<ScrollingTree> {
     WTF_MAKE_TZONE_ALLOCATED_EXPORT(ScrollingTree, WEBCORE_EXPORT);
     friend class ScrollingTreeLatchingController;
+    friend class ScrollingTreeLockedAccess;
 public:
     WEBCORE_EXPORT ScrollingTree();
     WEBCORE_EXPORT virtual ~ScrollingTree();
@@ -97,8 +106,8 @@ public:
     bool scrollingPerformanceTestingEnabled() const { return m_scrollingPerformanceTestingEnabled; }
     void setScrollingPerformanceTestingEnabled(bool value) { m_scrollingPerformanceTestingEnabled = value; }
 
-    WEBCORE_EXPORT bool isUserScrollInProgressAtEventLocation(const PlatformWheelEvent&);
-    WEBCORE_EXPORT OptionSet<WheelEventProcessingSteps> determineWheelEventProcessing(const PlatformWheelEvent&);
+    SWIFT_UNSAFE WEBCORE_EXPORT bool isUserScrollInProgressAtEventLocation(const PlatformWheelEvent&);
+    SWIFT_UNSAFE WEBCORE_EXPORT OptionSet<WheelEventProcessingSteps> determineWheelEventProcessing(const PlatformWheelEvent&);
     WEBCORE_EXPORT virtual WheelEventHandlingResult handleWheelEvent(const PlatformWheelEvent&, OptionSet<WheelEventProcessingSteps> = { });
 #if PLATFORM(MAC)
     // Stops spring animations in the scroller under the wheel event and in the scrollers that enclose it. This hit tests the
@@ -110,8 +119,8 @@ public:
     WEBCORE_EXPORT virtual void setRubberBandingInProgressForNode(ScrollingNodeID, bool);
 
 #if HAVE(RUBBER_BANDING)
-    NODELETE void setPendingMainFrameRubberbandingState(std::optional<RubberbandingState>&&) WTF_REQUIRES_LOCK(m_treeLock);
-    NODELETE std::optional<RubberbandingState> takePendingMainFrameRubberbandingState() WTF_REQUIRES_LOCK(m_treeLock);
+    NODELETE SWIFT_UNSAFE void setPendingMainFrameRubberbandingState(std::optional<RubberbandingState>&&) WTF_REQUIRES_LOCK(m_treeLock);
+    NODELETE SWIFT_UNSAFE std::optional<RubberbandingState> takePendingMainFrameRubberbandingState() WTF_REQUIRES_LOCK(m_treeLock);
 #endif
 
     NODELETE bool isUserScrollInProgressForNode(std::optional<ScrollingNodeID>);
@@ -126,16 +135,16 @@ public:
 
     NODELETE WEBCORE_EXPORT bool hasNodeWithActiveScrollAnimations();
 
-    virtual void invalidate() { }
+    SWIFT_UNSAFE virtual void invalidate() { }
     WEBCORE_EXPORT bool commitTreeState(std::unique_ptr<ScrollingStateTree>&&, std::optional<LayerHostingContextIdentifier> = std::nullopt);
-    bool commitTreeStateInternal(std::unique_ptr<ScrollingStateTree>&&, std::optional<LayerHostingContextIdentifier>) WTF_REQUIRES_LOCK(m_treeLock);
+    SWIFT_UNSAFE bool commitTreeStateInternal(std::unique_ptr<ScrollingStateTree>&&, std::optional<LayerHostingContextIdentifier>) WTF_REQUIRES_LOCK(m_treeLock);
 
     WEBCORE_EXPORT virtual void applyLayerPositions();
     void setNeedsApplyLayerPositions() { m_needsApplyLayerPositions = true; }
 
     virtual Ref<ScrollingTreeNode> createScrollingTreeNode(ScrollingNodeType, ScrollingNodeID) = 0;
     
-    WEBCORE_EXPORT ScrollingTreeNode* nodeForID(std::optional<ScrollingNodeID>) const;
+    SWIFT_UNSAFE WEBCORE_EXPORT ScrollingTreeNode* nodeForID(std::optional<ScrollingNodeID>) const;
 
     using VisitorFunction = Function<void(ScrollingNodeID, ScrollingNodeType, std::optional<FloatPoint> scrollPosition, std::optional<FloatPoint> layoutViewportOrigin, bool scrolledSinceLastCommit)>;
     void traverseScrollingTree(NOESCAPE const VisitorFunction&);
@@ -149,15 +158,15 @@ public:
     virtual void scrollingTreeNodeDidStopWheelEventScroll(ScrollingTreeScrollingNode&) { }
 
     // Called for requested scroll position updates. Returns true if handled.
-    virtual RequestsScrollHandling scrollingTreeNodeRequestsScroll(ScrollingNodeID, const RequestedScrollData&) { return RequestsScrollHandling::Unhandled; }
-    virtual bool scrollingTreeNodeRequestsKeyboardScroll(ScrollingNodeID, const RequestedKeyboardScrollData&) { return false; }
+    SWIFT_UNSAFE virtual RequestsScrollHandling scrollingTreeNodeRequestsScroll(ScrollingNodeID, const RequestedScrollData&) { return RequestsScrollHandling::Unhandled; }
+    SWIFT_UNSAFE virtual bool scrollingTreeNodeRequestsKeyboardScroll(ScrollingNodeID, const RequestedKeyboardScrollData&) { return false; }
 
     virtual void didHandleScrollRequestForNode(ScrollingNodeID, ScrollRequestType, FloatPoint, ShouldFireScrollEnd, Markable<ScrollRequestIdentifier>) { }
 
     // Delegated scrolling/zooming has caused the viewport to change, so update viewport-constrained layers
     WEBCORE_EXPORT void mainFrameViewportChangedViaDelegatedScrolling(const FloatPoint& scrollPosition, const WebCore::FloatRect& layoutViewport, double scale);
 
-    void notifyRelatedNodesAfterScrollPositionChange(ScrollingTreeScrollingNode& changedNode);
+    SWIFT_UNSAFE void notifyRelatedNodesAfterScrollPositionChange(ScrollingTreeScrollingNode& changedNode);
 
     virtual void reportSynchronousScrollingReasonsChanged(MonotonicTime, OptionSet<SynchronousScrollingReason>) { }
     virtual void reportExposedUnfilledArea(MonotonicTime, unsigned /* unfilledArea */) { }
@@ -179,16 +188,16 @@ public:
 
     NODELETE WEBCORE_EXPORT TrackingType eventTrackingTypeForPoint(EventTrackingRegions::EventType, IntPoint);
 
-    WEBCORE_EXPORT WebCore::RectEdges<bool> pinnedStateIncludingAncestorsAtPoint(FloatPoint);
+    SWIFT_UNSAFE WEBCORE_EXPORT WebCore::RectEdges<bool> pinnedStateIncludingAncestorsAtPoint(FloatPoint);
 
     virtual void receivedWheelEventWithPhases(PlatformWheelEventPhase /* phase */, PlatformWheelEventPhase /* momentumPhase */) { }
     virtual void deferWheelEventTestCompletionForReason(ScrollingNodeID, WheelEventTestMonitor::DeferReason) { }
     virtual void removeWheelEventTestCompletionDeferralForReason(ScrollingNodeID, WheelEventTestMonitor::DeferReason) { }
 
 #if PLATFORM(MAC)
-    virtual void handleWheelEventPhase(ScrollingNodeID, PlatformWheelEventPhase) = 0;
+    SWIFT_UNSAFE virtual void handleWheelEventPhase(ScrollingNodeID, PlatformWheelEventPhase) = 0;
 #else
-    void handleWheelEventPhase(ScrollingNodeID, PlatformWheelEventPhase) { }
+    SWIFT_UNSAFE void handleWheelEventPhase(ScrollingNodeID, PlatformWheelEventPhase) { }
 #endif
 
     virtual void setActiveScrollSnapIndices(ScrollingNodeID, std::optional<unsigned> /*horizontalIndex*/, std::optional<unsigned> /*verticalIndex*/) { }
@@ -211,7 +220,7 @@ public:
 
     NODELETE WEBCORE_EXPORT bool willWheelEventStartSwipeGesture(const PlatformWheelEvent&);
 
-    ScrollingTreeFrameScrollingNode* rootNode() const { return m_rootNode.get(); }
+    SWIFT_UNSAFE ScrollingTreeFrameScrollingNode* rootNode() const { return m_rootNode.get(); }
     NODELETE std::optional<ScrollingNodeID> latchedNodeID() const;
     NODELETE WEBCORE_EXPORT void clearLatchedNode();
 
@@ -226,9 +235,9 @@ public:
     HashSet<Ref<ScrollingTreeOverflowScrollProxyNode>>& activeOverflowScrollProxyNodes() LIFETIME_BOUND { return m_activeOverflowScrollProxyNodes; }
     HashSet<Ref<ScrollingTreePositionedNode>>& activePositionedNodes() LIFETIME_BOUND { return m_activePositionedNodes; }
 
-    WEBCORE_EXPORT String scrollingTreeAsText(OptionSet<ScrollingStateTreeAsTextBehavior> = { });
+    SWIFT_UNSAFE WEBCORE_EXPORT String scrollingTreeAsText(OptionSet<ScrollingStateTreeAsTextBehavior> = { });
 
-    WEBCORE_EXPORT float rubberbandHyperbolicCoefficientForTesting();
+    SWIFT_UNSAFE WEBCORE_EXPORT float rubberbandHyperbolicCoefficientForTesting();
 
     bool isMonitoringWheelEvents() const { return m_isMonitoringWheelEvents; }
     void setIsMonitoringWheelEvents(bool b) { m_isMonitoringWheelEvents = b; }
@@ -238,10 +247,11 @@ public:
 
     void scrollBySimulatingWheelEventForTesting(ScrollingNodeID, FloatSize);
 
-    virtual void lockLayersForHitTesting() { }
-    virtual void unlockLayersForHitTesting() { }
+    SWIFT_UNSAFE virtual void lockLayersForHitTesting() { }
+    SWIFT_UNSAFE virtual void unlockLayersForHitTesting() { }
 
     class HitTestLocker {
+        WTF_MAKE_NONCOPYABLE(HitTestLocker);
     public:
         HitTestLocker(ScrollingTree& tree)
             : m_tree(tree)
@@ -256,7 +266,7 @@ public:
         const Ref<ScrollingTree> m_tree;
     };
 
-    virtual bool isScrollingSynchronizedWithMainThread() WTF_REQUIRES_LOCK(m_treeLock) { return true; }
+    SWIFT_UNSAFE virtual bool isScrollingSynchronizedWithMainThread() WTF_REQUIRES_LOCK(m_treeLock) { return true; }
 
     Lock& treeLock() LIFETIME_BOUND WTF_RETURNS_LOCK(m_treeLock) { return m_treeLock; }
 
@@ -269,9 +279,9 @@ public:
     WEBCORE_EXPORT Vector<ScrollUpdate> takePendingScrollUpdates();
     NODELETE WEBCORE_EXPORT bool hasPendingScrollUpdates();
 
-    virtual void removePendingScrollAnimationForNode(ScrollingNodeID) { }
+    SWIFT_UNSAFE virtual void removePendingScrollAnimationForNode(ScrollingNodeID) { }
 
-    NODELETE WEBCORE_EXPORT FloatBoxExtent mainFrameObscuredContentInsets() const;
+    NODELETE SWIFT_UNSAFE WEBCORE_EXPORT FloatBoxExtent mainFrameObscuredContentInsets() const;
 
 #if HAVE(NSREFRESHCONTROLLER)
     virtual float topScrollStretchForRefreshController() const { return 0; }
@@ -282,7 +292,7 @@ public:
     virtual void triggerMainFrameRubberBandSnapBack() { }
     virtual void mainFrameRubberBandTargetOffsetDidChange() { }
 
-    NODELETE WEBCORE_EXPORT FloatPoint mainFrameScrollPosition() const;
+    NODELETE SWIFT_UNSAFE WEBCORE_EXPORT FloatPoint mainFrameScrollPosition() const;
 
     NODELETE WEBCORE_EXPORT ScrollbarWidth mainFrameScrollbarWidth() const;
     NODELETE WEBCORE_EXPORT std::optional<ScrollbarColor> mainFrameScrollbarColor() const;
@@ -312,9 +322,9 @@ public:
     WEBCORE_EXPORT virtual void scrollingTreeNodeScrollbarVisibilityDidChange(ScrollingNodeID, ScrollbarOrientation, bool) { };
     WEBCORE_EXPORT virtual void scrollingTreeNodeScrollbarMinimumThumbLengthDidChange(WebCore::ScrollingNodeID, ScrollbarOrientation, int) { };
 
-    void addScrollingNodeToHostedSubtreeMap(WebCore::LayerHostingContextIdentifier, Ref<ScrollingTreeFrameHostingNode>);
-    void removeNode(ScrollingNodeID, ScrollingTreeFrameHostingNode* = nullptr);
-    void removeFrameHostingNode(LayerHostingContextIdentifier);
+    SWIFT_UNSAFE void addScrollingNodeToHostedSubtreeMap(WebCore::LayerHostingContextIdentifier, Ref<ScrollingTreeFrameHostingNode>);
+    SWIFT_UNSAFE void removeNode(ScrollingNodeID, ScrollingTreeFrameHostingNode* = nullptr);
+    SWIFT_UNSAFE void removeFrameHostingNode(LayerHostingContextIdentifier);
 
     virtual void hostedSubtreeNeedsFullCommit(FrameIdentifier) { }
 
@@ -353,7 +363,6 @@ protected:
     mutable Lock m_treeLock; // Protects the scrolling tree.
 
 private:
-    bool updateTreeFromStateNodeRecursive(const ScrollingStateNode*, struct CommitTreeState&) WTF_REQUIRES_LOCK(m_treeLock);
     virtual void propagateSynchronousScrollingReasons(const HashSet<ScrollingNodeID>&) WTF_REQUIRES_LOCK(m_treeLock) { }
 
     void applyLayerPositionsRecursive(ScrollingTreeNode&) WTF_REQUIRES_LOCK(m_treeLock);
@@ -362,11 +371,11 @@ private:
     
     NODELETE void setOverlayScrollbarsEnabled(bool);
 
-    virtual void didCommitTree() { }
+    SWIFT_UNSAFE virtual void didCommitTree() { }
 
-    WEBCORE_EXPORT virtual RefPtr<ScrollingTreeNode> scrollingNodeForPoint(FloatPoint);
+    SWIFT_UNSAFE WEBCORE_EXPORT virtual RefPtr<ScrollingTreeNode> scrollingNodeForPoint(FloatPoint);
 #if ENABLE(WHEEL_EVENT_REGIONS)
-    WEBCORE_EXPORT virtual OptionSet<EventListenerRegionType> eventListenerRegionTypesForPoint(FloatPoint) const;
+    SWIFT_UNSAFE WEBCORE_EXPORT virtual OptionSet<EventListenerRegionType> eventListenerRegionTypesForPoint(FloatPoint) const;
 #endif
 
     OptionSet<WheelEventProcessingSteps> computeWheelProcessingSteps(const PlatformWheelEvent&) WTF_REQUIRES_LOCK(m_treeStateLock);
@@ -380,7 +389,15 @@ private:
     HashMap<FrameIdentifier, HashSet<ScrollingNodeID>> m_nodeMapPerFrame WTF_GUARDED_BY_LOCK(m_frameIDMapLock);
 
     ScrollingTreeLatchingController m_latchingController;
-    ScrollingTreeGestureState m_gestureState;
+    // The gesture state is kept with the latching state (ScrollingTreeLatchingController.swift). This storage keeps
+    // ScrollingTree's layout the same with either setting, so a TestWebKitAPI build can run against a WebCore built with
+    // the other. It mirrors ScrollingTreeGestureState's private members (ScrollingTreeGestureState.h): keep the two in step.
+    struct GestureStateLayout {
+        ThreadSafeWeakRef<ScrollingTree> scrollingTree;
+        Markable<ScrollingNodeID> mayBeginNodeID;
+        Markable<ScrollingNodeID> activeNodeID;
+    };
+    [[maybe_unused]] alignas(GestureStateLayout) std::array<std::byte, sizeof(GestureStateLayout)> m_gestureStateStorage { };
 
     RelatedNodesMap m_overflowRelatedNodesMap;
 
@@ -425,9 +442,12 @@ private:
     HashMap<LayerHostingContextIdentifier, Ref<ScrollingTreeFrameHostingNode>> m_hostedSubtrees;
 
 protected:
-    bool m_allowLatching { true };
+    // Read on the event handling thread while the scrolling thread changes it.
+    std::atomic<bool> m_allowLatching { true };
+    static_assert(sizeof(std::atomic<bool>) == sizeof(bool) && alignof(std::atomic<bool>) == alignof(bool));
 
 private:
+    bool m_hasLockedAccess WTF_GUARDED_BY_LOCK(m_treeLock) { false }; // Whether a ScrollingTreeLockedAccess for this tree exists.
     ThreadSafeWeakHashSet<ScrollingTreeNode> m_fixedOrStickyNodes;
     std::atomic<bool> m_isHandlingProgrammaticScroll { false };
     std::atomic<bool> m_needsApplyLayerPositions { false };
@@ -437,6 +457,108 @@ private:
     bool m_asyncFrameOrOverflowScrollingEnabled { false };
     bool m_wheelEventGesturesBecomeNonBlocking { false };
     bool m_inCommitTreeState { false };
+};
+
+// Witness that a scrolling tree's m_treeLock is held, for Swift: Swift calls the members of the tree and of its nodes
+// that need the lock through one of these, and cannot make one itself. Only code that holds the tree lock constructs
+// one (the constructor requires the lock, and Swift may not call it), and the lock stays held until it is destroyed:
+// it must not be constructed in a scope that drops the lock, such as the Condition waits on m_treeLock in
+// ThreadedScrollingTree::waitForEventToBeProcessedByMainThread(),
+// ThreadedScrollingTree::waitForRenderingUpdateCompletionOrTimeout() and
+// RemoteScrollingTreeMac::waitForEventDefaultHandlingCompletion(). Only one exists for a tree at a time; constructing
+// a second one while the first is alive crashes. The frame that declares the Locker holds a Ref to the tree declared
+// before the Locker, and no frame from that one down to the witness holds a reference or iterator into the tree's or
+// its nodes' storage.
+// It cannot be copied, moved or put on the heap, so it lives in the frame that holds the lock, and Swift receives it
+// borrowed for one call. Each member checks that the lock is locked and that the nodes it is given belong to its tree.
+// The code that constructs it chooses its mode: ScrollingTreeAccessMode::Commit only in ScrollingTree::commitTreeState()
+// and what it calls, the thread that writes the tree's structure, whose readers on that thread take no lock. The members
+// that change the tree's structure (the root, the node map, the hosted subtrees, a node's parent, children and hosted
+// children) and the node commit members crash on a witness of mode Event, such as one handed to the wheel event entries.
+class SWIFT_NONCOPYABLE __attribute__((swift_attr("~Sendable"))) WEBCORE_EXPORT ScrollingTreeLockedAccess {
+    WTF_MAKE_NONCOPYABLE(ScrollingTreeLockedAccess);
+    WTF_FORBID_HEAP_ALLOCATION;
+public:
+    SWIFT_UNSAFE ScrollingTreeLockedAccess(ScrollingTree& tree, ScrollingTreeAccessMode) WTF_REQUIRES_LOCK(tree.treeLock());
+    // Swift imports a noncopyable class only if it has a move constructor, so one is declared; it traps.
+    [[noreturn]] ScrollingTreeLockedAccess(ScrollingTreeLockedAccess&&);
+    ScrollingTreeLockedAccess& operator=(ScrollingTreeLockedAccess&&) = delete;
+    // Swift would otherwise give the class an init() that zero-fills it.
+    ScrollingTreeLockedAccess() = delete;
+    ~ScrollingTreeLockedAccess();
+
+    RefPtr<ScrollingTreeNode> nodeForID(ScrollingNodeID) const;
+    RefPtr<ScrollingTreeFrameScrollingNode> rootNode() const;
+    // On a RemoteScrollingTreeMac the caller must also hold the layer hit-test lock, which the witness does not show.
+    SWIFT_UNSAFE RefPtr<ScrollingTreeNode> scrollingNodeForPoint(FloatPoint) const;
+    void removeNode(ScrollingNodeID) const;
+    void removeNode(ScrollingNodeID, ScrollingTreeFrameHostingNode&) const;
+    void addScrollingNodeToHostedSubtreeMap(LayerHostingContextIdentifier, ScrollingTreeFrameHostingNode&) const;
+    void removeFrameHostingNode(LayerHostingContextIdentifier) const;
+
+    bool commitStateBeforeChildren(ScrollingTreeNode&, const ScrollingStateNode&) const;
+    bool commitStateAfterChildren(ScrollingTreeNode&, const ScrollingStateNode&) const;
+    void didCompleteCommitForNode(ScrollingTreeNode&) const;
+    void willBeDestroyed(ScrollingTreeNode&) const;
+    RefPtr<ScrollingTreeNode> parent(ScrollingTreeNode&) const;
+    void setParent(ScrollingTreeNode&, ScrollingTreeNode* parent) const;
+    void appendChild(ScrollingTreeNode& parent, ScrollingTreeNode& child) const;
+    void removeChild(ScrollingTreeNode& parent, ScrollingTreeNode& child) const;
+    void removeAllChildren(ScrollingTreeNode&) const;
+    // The child at index of node, which must be less than childCount(node): an index past the end crashes. The result
+    // is never null. Swift iterates by index, holding no iterator into the children across calls.
+    size_t childCount(ScrollingTreeNode&) const;
+    RefPtr<ScrollingTreeNode> childAt(ScrollingTreeNode&, size_t index) const;
+
+    // The tree's root node; null is allowed. The node must belong to the tree.
+    void setRootNode(ScrollingTreeFrameScrollingNode*) const;
+    void removeAllNodes() const;
+    // Adds node to the node map under its ID, replacing any node with that ID, and to the nodes of frameID.
+    void addNode(ScrollingTreeNode&, FrameIdentifier) const;
+
+    WheelEventHandlingResult handleWheelEvent(ScrollingTreeScrollingNode&, const PlatformWheelEvent&, EventTargeting) const;
+    void stopSpringAnimation(ScrollingTreeScrollingNode&) const;
+    void serviceScrollAnimation(ScrollingTreeScrollingNode&, MonotonicTime) const;
+    void scrollTo(ScrollingTreeScrollingNode&, const FloatPoint&, ScrollType, ScrollClamping) const;
+    void scrollBy(ScrollingTreeScrollingNode&, const FloatSize&, ScrollClamping) const;
+    void handleWheelEventPhase(ScrollingNodeID, PlatformWheelEventPhase) const;
+
+    void setLayerHostingContextIdentifier(ScrollingTreeFrameHostingNode&, std::optional<LayerHostingContextIdentifier>) const;
+    void addHostedChild(ScrollingTreeFrameHostingNode&, ScrollingTreeNode& child) const;
+    void removeHostedChildren(ScrollingTreeFrameHostingNode&) const;
+    void removeHostedChild(ScrollingTreeFrameHostingNode&, ScrollingTreeNode& child) const;
+
+private:
+    ScrollingTree& tree() const;
+    void checkNode(const ScrollingTreeNode&) const;
+    void checkCommit() const;
+
+    const Ref<ScrollingTree> m_tree;
+    const ScrollingTreeAccessMode m_mode;
+};
+
+// What ScrollingTree::commitTreeState() records while Swift updates the tree from the state tree: the nodes it
+// visits, the nodes it orphans, the hosted subtrees it can now commit. Only the commit constructs one, on its stack,
+// and hands it to Swift for one call. It cannot be copied, moved or put on the heap.
+class SWIFT_NONCOPYABLE __attribute__((swift_attr("~Sendable"))) ScrollingTreeCommitState {
+    WTF_MAKE_NONCOPYABLE(ScrollingTreeCommitState);
+    WTF_FORBID_HEAP_ALLOCATION;
+public:
+    // Swift imports a noncopyable class only if it has a move constructor, so one is declared; it traps.
+    [[noreturn]] ScrollingTreeCommitState(ScrollingTreeCommitState&&);
+    ScrollingTreeCommitState& operator=(ScrollingTreeCommitState&&) = delete;
+    ~ScrollingTreeCommitState();
+
+    void didVisitNode(ScrollingNodeID);
+    // Makes node's children orphans, which are kept alive until the commit ends, and removes them from node.
+    void orphanChildren(ScrollingTreeNode&);
+    // After node and its children are committed: records node if it is a scrolling node with synchronous scrolling
+    // reasons; if it is a frame hosting node with hosted subtrees waiting for it, takes them to commit after this one;
+    // and adds it to the hosting node's hosted children when this commits a hosted subtree.
+    void didCommitNode(ScrollingTreeNode&);
+
+protected:
+    ScrollingTreeCommitState() = default;
 };
 
 class ScrollingTreeWheelEventTestMonitorCompletionDeferrer {
