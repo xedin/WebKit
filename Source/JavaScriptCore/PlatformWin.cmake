@@ -31,6 +31,9 @@ set(_jsc_swift_sources
     runtime/JSBigIntDigitsFFT.swift
     runtime/JSBigIntDigitsMultiply.swift
     runtime/JSBigIntDigitsPrimitives.swift
+
+    yarr/YarrByteCompiler.swift
+    yarr/YarrInterpreterMatcher.swift
 )
 list(TRANSFORM _jsc_swift_sources PREPEND "${JAVASCRIPTCORE_DIR}/")
 set(_jsc_swift_dir "${JavaScriptCore_DERIVED_SOURCES_DIR}/JSCSwift")
@@ -69,12 +72,13 @@ add_custom_command(
         -c ${_jsc_swift_sources} -o "${_jsc_swift_obj}"
     DEPENDS ${_jsc_swift_sources} "${JAVASCRIPTCORE_DIR}/JSCSwiftBoundary.modulemap"
         "${JAVASCRIPTCORE_DIR}/runtime/JSBigIntSwiftDigits.h"
+        "${JAVASCRIPTCORE_DIR}/yarr/YarrInterpreterSwiftTypes.h"
     COMMENT "Compiling JSCSwift"
     VERBATIM)
 add_custom_target(JSCSwift DEPENDS "${_jsc_swift_obj}" "${_jsc_swift_hdr}")
 list(APPEND JavaScriptCore_SOURCES "${_jsc_swift_obj}")
 set_source_files_properties("${_jsc_swift_obj}" PROPERTIES EXTERNAL_OBJECT TRUE GENERATED TRUE)
-# JSBigInt.cpp, in a unified source, includes the generated header.
+# JSBigInt.cpp and YarrInterpreter.cpp, in unified sources, include the generated header.
 list(APPEND JavaScriptCore_DEPENDENCIES JSCSwift)
 # <swiftToCxx/_SwiftCxxInteroperability.h>, which the generated header includes.
 list(APPEND JavaScriptCore_PRIVATE_INCLUDE_DIRECTORIES "${_jsc_swift_usr}/lib/swift")

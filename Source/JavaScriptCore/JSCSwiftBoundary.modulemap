@@ -1,6 +1,7 @@
 // The C++ declarations that the Swift compiled into libJavaScriptCore imports (libJavaScriptCore.xcconfig).
 module JSCSwiftBoundary {
     header "runtime/JSBigIntSwiftDigits.h"
+    header "yarr/YarrInterpreterSwiftTypes.h"
     requires cplusplus
     export *
 }
