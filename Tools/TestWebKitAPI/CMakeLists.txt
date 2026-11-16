@@ -238,6 +238,7 @@ if (ENABLE_JAVASCRIPTCORE)
         Tests/JavaScriptCore/RegularExpression.cpp
         Tests/JavaScriptCore/StrongBlock.cpp
         Tests/JavaScriptCore/WeakSet.cpp
+        Tests/JavaScriptCore/YarrInterpreterBench.cpp
     )
 
     set(TestJavaScriptCore_LIBRARIES

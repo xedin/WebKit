@@ -821,6 +821,7 @@
 				JavaScriptCore/RegularExpression.cpp,
 				JavaScriptCore/StrongBlock.cpp,
 				JavaScriptCore/WeakSet.cpp,
+				JavaScriptCore/YarrInterpreterBench.cpp,
 				Misc/TestRunnerTests.cpp,
 				TestRunnerShared/TestFeaturesTests.cpp,
 				TestWebKitAPIAdditionsHook.mm,
